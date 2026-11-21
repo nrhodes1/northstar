@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# PROJECT — identity, coordinate frame, grids, levels
+# ---------------------------------------------------------------------------
+# Units: lengths are feet unless written as a string with ' and/or " marks
+#        (e.g. "11'-6\"", "3/4\"", "400mm" also accepted).
+# Plan frame ("drawing frame"): origin at grid 1 / grid A intersection,
+#   +X runs from grid 1 toward grid 9, +Y runs from grid C toward grid A
+#   (i.e. toward River St / the NE face). Z = 0 at Level 1 finished floor.
+# ---------------------------------------------------------------------------
+
+project:
+  name: North Star House
+  client: Habitat for Humanity Greater Boston
+  address: 466 River Street, Mattapan, Boston, MA
+  source_set: sources/261109_HFH_North_Star_House_SD_Progress.pdf
+  phase: SD
+
+site:
+  # Geolocation of the site model (Rhino EarthAnchorPoint of the client's
+  # Google-tiles .3dm, model base point 0,0,0, units mm, +Y = true north).
+  anchor_lat: 42.26874327846692
+  anchor_lon: -71.09183598884616
+  # Rigid transform drawing-frame -> site-model frame. Solved by matching the
+  # 16 porch columns of the SD plans to the Revit export (residual < 4 mm).
+  plan_rotation_deg: -47.17447   # rotation of drawing +X about Z (CCW +)
+  plan_origin_mm: [-3898.809, 13772.164]
+  level1_elevation_mm: 13614.0   # L1 FFE in the site model's Z datum
+
+grids:
+  x:   # grid number -> X (ft). 11'-6" bays.
+    "1": 0
+    "2": "11'-6\""
+    "3": "23'-0\""
+    "4": "34'-6\""
+    "5": "46'-0\""
+    "6": "57'-6\""
+    "7": "69'-0\""
+    "8": "80'-6\""
+    "9": "92'-0\""
+  y:
+    "A": 0
+    "B": "-12'-4\""
+    "C": "-25'-2\""
+
+levels:
+  # name: elevation above L1 (ft). Drawing labels are +10'-0" (L1 = 10'-0").
+  L1: 0
+  L2: 10
+  L3: 20
+  L4: 30
+  ROOF: 40
+
+drawing_label_offset_ft: 10   # drawings label L1 as 10'-0"

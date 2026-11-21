@@ -1,0 +1,34 @@
+# ---------------------------------------------------------------------------
+# CODE & ZONING CONSTRAINTS — evaluated by checks/ on every build
+# ---------------------------------------------------------------------------
+# Values marked `verify: true` are placeholders to be confirmed against the
+# governing documents before they are relied on.
+# Building code: 780 CMR 10th ed. (IBC 2021 w/ MA amendments).
+# ---------------------------------------------------------------------------
+
+occupancy: R-2            # with M (commercial) at L1
+construction_type: V-A    # verify: true
+sprinklered: NFPA13R      # verify: true
+
+building:
+  max_stories: 4          # IBC Table 504.4, R-2, V-A, NFPA 13R
+  max_height: "60'-0\""   # IBC Table 504.3, R-2, V-A, NFPA 13R (grade plane to roof avg.)
+
+guards:
+  min_height: "3'-6\""    # IBC 1015.3
+  max_opening: "4\""      # IBC 1015.4 (4" sphere)
+
+stairs:
+  max_riser: "7\""        # IBC 1011.5.2
+  min_tread: "11\""
+  min_width: "3'-0\""     # IBC 1011.2 exception: occupant load < 50
+  min_landing_depth: "3'-0\""
+
+zoning:
+  district: Mattapan Neighborhood District (Article 60)   # verify: true
+  max_height: "45'-0\""   # verify: true
+  max_far: 2.0            # verify: true
+  lot_area_sf: null       # set from survey
+
+energy:
+  max_window_wall_ratio: 0.30   # stretch-code style target, verify: true

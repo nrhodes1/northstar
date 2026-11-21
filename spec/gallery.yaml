@@ -1,0 +1,98 @@
+# ---------------------------------------------------------------------------
+# GALLERY — shared exterior porch, open stairs, canopy (all circulation)
+# ---------------------------------------------------------------------------
+# Every material below is a key in materials.yaml — change freely.
+# ---------------------------------------------------------------------------
+
+levels_served: [L2, L3]          # deck levels above grade (L1 = paved porch)
+canopy_level: L4                  # roof over the gallery
+
+columns:
+  section: hss_square
+  size: "6\""
+  material: steel_painted_dark
+  points:                         # [x, y] ft, from A1.01
+    # inner row, along the porch wall
+    - [30.82, -26.75]
+    - [38.32, -26.75]
+    - [46.00, -26.75]
+    - [53.93, -26.75]
+    - [61.82, -26.75]
+    # outer row
+    - [22.63, -34.96]
+    - [30.68, -35.65]
+    - [38.34, -35.02]
+    - [45.99, -34.40]
+    - [53.95, -33.76]
+    - [61.92, -33.11]
+    - [69.90, -31.47]
+    # stair towers
+    - [21.70, -45.62]
+    - [29.79, -46.33]
+    - [64.26, -44.25]
+    - [72.25, -42.55]
+
+deck:
+  # Outline of the deck at L2/L3. Inner edge sits on the porch wall.
+  outline:
+    - [23.583, -26.499]
+    - [69.030, -26.499]
+    - [70.250, -31.900]
+    - [61.920, -33.610]
+    - [53.950, -34.260]
+    - [45.990, -34.900]
+    - [38.340, -35.520]
+    - [30.680, -36.150]
+    - [22.580, -35.460]
+  thickness: "10\""               # framing depth incl. decking
+  framing_material: steel_painted_dark
+  surface_material: decking_wood   # e.g. decking_wood | grating_galv | concrete_topping
+  soffit_material: soffit_wood
+
+guardrail:
+  height: "3'-6\""                # 42" (IBC 1015)
+  type: vertical_pickets          # vertical_pickets | mesh_panel | cable
+  picket: {size: "3/4\"", spacing: "3 1/2\""}   # clear gap; < 4" sphere rule
+  top_rail: {size: ["2\"", "2\""]}
+  post_spacing: "5'-0\""
+  material: steel_painted_dark
+
+stairs:
+  - name: stair_nw
+    # Footprint corners, starting at the deck-side corner nearest the wall,
+    # going around: [deck_inner, deck_outer, far_outer, far_inner]
+    footprint:
+      - [22.63, -34.96]
+      - [30.68, -35.65]
+      - [29.79, -46.33]
+      - [21.70, -45.62]
+    flights_per_storey: 2         # U-stair with landing at far end
+    first_flight_side: outer      # which half the L1->L2 run starts on
+    from_level: L1
+    to_level: L3
+  - name: stair_se
+    footprint:
+      - [61.92, -33.11]
+      - [69.90, -31.47]
+      - [72.25, -42.55]
+      - [64.26, -44.25]
+    flights_per_storey: 2
+    first_flight_side: inner
+    from_level: L1
+    to_level: L3
+
+stair_detail:
+  riser_max: "7\""
+  tread: "11\""
+  width: "3'-6\""
+  stringer: {size: ["2\"", "12\""], material: steel_painted_dark}
+  tread_material: grating_galv
+  landing_material: grating_galv
+
+canopy:
+  covers: [deck, stairs]
+  overhang: "1'-0\""
+  thickness: "8\""
+  frame_material: steel_painted_dark
+  surface: pv_canopy               # pv_canopy | metal_roof | polycarbonate
+  pv_module: {width: "3'-4\"", length: "5'-6\"", gap: "1\""}

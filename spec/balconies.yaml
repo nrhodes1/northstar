@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------
+# BALCONIES — one per non-duplex unit. Outline = deck polygon (ft).
+# Rails are added automatically on every edge that is not against a wall.
+# ---------------------------------------------------------------------------
+
+defaults:
+  thickness: "8\""
+  surface_material: decking_wood
+  framing_material: steel_painted_dark
+  guardrail: gallery             # reuse gallery.yaml guardrail definition
+
+balconies:
+  - {id: 102B, level: L1, raised: "1'-0\"", outline: [[46.80, -3.0], [56.80, -3.0], [56.80, 2.9], [46.80, 2.9]]}
+  - {id: 202B, level: L2, outline: [[46.80, -3.0], [56.80, -3.0], [56.80, 4.3], [46.80, 4.3]]}
+  - {id: 302B, level: L3, outline: [[58.07, -3.0], [68.20, -3.0], [68.20, 4.3], [58.07, 4.3]]}
+  - {id: 101B, level: L1, raised: "1'-0\"", outline: [[88.92, -12.33], [92.33, -12.33], [93.31, -12.13], [95.31, -21.58], [94.34, -21.79], [91.08, -22.48]]}
+  - {id: 201B, level: L2, outline: [[89.00, -12.72], [93.33, -12.26], [94.80, -11.95], [96.78, -21.27], [95.31, -21.58], [91.08, -22.48]]}
+  - {id: 203B, level: L2, outline: [[1.50, -13.33], [1.50, -23.09], [-3.35, -23.09], [-4.35, -23.01], [-3.50, -13.25], [-2.50, -13.33]]}
+  - {id: 304B, level: L3, outline: [[1.25, -13.33], [1.25, -23.09], [-3.35, -23.09], [-4.35, -23.01], [-3.50, -13.25], [-2.50, -13.33]]}

@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# ENVELOPE — wall assemblies, cladding, parapets, panelization
+# ---------------------------------------------------------------------------
+# Every exterior wall is built from `assemblies.<name>.layers`, listed from
+# OUTSIDE to INSIDE, starting at the outline in massing.yaml.
+# Swap cladding by editing the first layer (or pointing `cladding` at
+# another entry in `cladding_types`).
+# ---------------------------------------------------------------------------
+
+default_assembly: straw_panel_rainscreen
+
+assemblies:
+  straw_panel_rainscreen:
+    description: >
+      Load-bearing prefabricated straw panel (basis of design: Ecococon;
+      New Frameworks equivalent) with ventilated rainscreen.
+    cladding: corrugated_metal          # -> cladding_types
+    layers:                              # outside -> inside
+      - {name: cladding,  thickness: "7/8\"",  material: CLADDING}  # resolved from cladding_types
+      - {name: cavity,    thickness: "1 1/2\"", material: null}     # battens / ventilated gap (no solid)
+      - {name: sheathing, thickness: "5/8\"",  material: wood_fibre_board}
+      - {name: straw,     thickness: "400mm",  material: straw_panel, structural: true}
+      - {name: plaster,   thickness: "3/4\"",  material: clay_plaster}
+
+cladding_types:
+  corrugated_metal:
+    material: corrugated_galvalume
+    orientation: vertical          # ribs vertical
+    profile: {pitch: "2 2/3\"", depth: "7/8\""}
+  standing_seam:
+    material: standing_seam_zinc
+    orientation: vertical
+    profile: {pitch: "16\"", depth: "1\""}
+  wood_rainscreen:
+    material: charred_larch
+    orientation: vertical
+    profile: {pitch: "5 1/2\"", depth: "3/4\""}
+
+panelization:
+  # Straw panel modules (Ecococon: 400 mm thick, widths up to 1200 mm,
+  # storey-height). Panels are laid out per wall run from each corner.
+  module_width: "1200mm"
+  min_width: "300mm"
+  storey_height: true
+
+parapet:
+  height: "2'-4\""          # above top of roof structure
+  coping_material: coping_metal
+  coping_overhang: "1 1/2\""
+
+base:
+  # L1 sits back ~1'-0" from upper floors (see massing). Optional base trim.
+  drip_flashing: true

@@ -1,0 +1,106 @@
+# ---------------------------------------------------------------------------
+# MASSING — exterior outline of each storey (finished exterior face of wall)
+# ---------------------------------------------------------------------------
+# Each storey lists one or more closed polygons (counter-clockwise or not —
+# the builder normalises). Coordinates are [x, y] in feet, drawing frame
+# (see project.yaml). Seeded from the vector linework of A1.01–A1.04 via
+# tools/extract_pdf.py, then cleaned by hand (see decisions.md D-003).
+#
+# A storey's walls run from its level to the next level up. Wherever a
+# storey's footprint is larger than the one above, the difference becomes a
+# roof or terrace (see roofs.yaml); the top storey's footprint is the roof.
+# ---------------------------------------------------------------------------
+
+reference_face: exterior   # outline = outside face of cladding
+
+storeys:
+  L1:
+    # Ground floor is set back ~1'-0" from the upper floors on the street
+    # faces (NE, NW, SE); upper floors oversail.
+    - name: block
+      points:
+        - [-0.321, 0.333]
+        - [46.739, 0.333]
+        - [46.739, -3.000]     # balcony 102B recess
+        - [56.802, -3.000]
+        - [56.802, 0.334]
+        - [92.332, 0.334]
+        - [92.332, -12.333]
+        - [88.918, -12.333]    # balcony 101B notch
+        - [91.075, -22.483]
+        - [94.335, -21.790]
+        - [97.398, -36.197]
+        - [72.292, -41.533]
+        - [69.030, -26.499]    # porch (gallery) face
+        - [23.583, -26.499]
+        - [21.430, -45.849]
+        - [-3.548, -36.643]
+
+  L2:
+    - name: block
+      points:
+        - [-1.220, 1.333]
+        - [46.802, 1.333]
+        - [46.802, -3.000]     # balcony 202B recess
+        - [56.802, -3.000]
+        - [56.802, 1.333]
+        - [93.332, 1.333]
+        - [93.332, -12.261]
+        - [88.999, -12.717]    # balcony 201B notch
+        - [91.075, -22.483]
+        - [95.313, -21.582]
+        - [98.584, -36.967]
+        - [72.500, -42.511]
+        - [69.030, -26.499]
+        - [23.583, -26.499]
+        - [21.340, -46.881]
+        - [-4.594, -37.324]
+        - [-3.352, -23.092]    # balcony 203B notch
+        - [1.500, -23.092]
+        - [1.500, -13.333]
+        - [-2.500, -13.333]
+
+  L3:
+    - name: block
+      points:
+        - [-1.220, 1.333]
+        - [58.072, 1.333]
+        - [58.072, -3.000]     # balcony 302B recess
+        - [68.197, -3.000]
+        - [68.197, 1.333]
+        - [93.332, 1.333]
+        - [93.332, -12.261]
+        - [98.584, -36.967]
+        - [72.500, -42.511]
+        - [69.030, -26.499]
+        - [23.583, -26.499]
+        - [21.340, -46.881]
+        - [-4.594, -37.324]
+        - [-3.352, -23.092]    # balcony 304B notch
+        - [1.250, -23.092]
+        - [1.250, -13.333]
+        - [-2.500, -13.333]
+
+  L4:
+    # Three bars; the gaps between them are the L4 terraces.
+    - name: bar_nw
+      points:
+        - [-1.220, 1.333]
+        - [23.333, 1.333]
+        - [23.333, -24.035]
+        - [21.340, -46.881]
+        - [-4.594, -37.324]
+    - name: bar_center
+      points:
+        - [33.459, 1.333]
+        - [57.499, 1.333]
+        - [57.499, -26.499]
+        - [36.513, -26.499]
+        - [33.459, -12.333]
+    - name: bar_se
+      points:
+        - [68.990, 1.333]
+        - [93.332, 1.333]
+        - [93.332, -12.261]
+        - [96.359, -26.499]
+        - [68.990, -26.499]

@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# ROOFS & TERRACES
+# ---------------------------------------------------------------------------
+# Roof zones are derived automatically from massing:
+#   - top of the highest storey            -> `main_roof` treatment
+#   - exposed tops of lower storeys        -> `terrace` treatment
+# unless a zone is overridden below by naming a point inside it.
+# ---------------------------------------------------------------------------
+
+main_roof:
+  surface: green_roof             # green_roof | ballast | membrane
+  green_roof_material: sedum
+  setback_from_parapet: "1'-6\""  # as drawn (A1.05); IFC 1205 pathways: verify
+  pv:
+    enabled: true
+    layout: herringbone           # herringbone | rows
+    module: {width: "3'-4\"", length: "5'-6\"", thickness: "1 3/8\""}
+    rotation_deg: 45              # relative to grid X
+    tilt_deg: 10
+    rack_height: "1'-0\""         # to low edge of module (clears sedum)
+    gap: "6\""
+    material: pv_module
+
+terrace:
+  surface: pavers_on_pedestals
+  paver_material: pavers_concrete
+  paver_size: ["2'-0\"", "2'-0\""]
+  buildup: "8\""                  # pedestals + pavers above roof CLT
+  guardrail: gallery              # same rail as gallery
+  curb_height: "8\""
+  planters:
+    enabled: true
+    depth: "2'-0\""
+    height: "2'-0\""
+    material: planter_metal
+    planting: meadow_planting
+
+overrides: []
+  # - {point: [28, -10], level: L4, treatment: main_roof}
+
+soffits:
+  material: soffit_wood           # where upper storeys oversail L1

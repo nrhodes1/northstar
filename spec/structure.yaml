@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------------------
+# STRUCTURE — CLT floors on load-bearing straw panels + interior posts/beams
+# ---------------------------------------------------------------------------
+
+system: load_bearing_straw_panel_with_clt   # decisions.md D-006
+
+floors:
+  # Floor build-up, top of finish = level elevation.
+  assembly:
+    - {name: finish,   thickness: "3/4\"",   material: wood_floor}
+    - {name: topping,  thickness: "1 1/2\"",  material: gypcrete}
+    - {name: acoustic, thickness: "1/2\"",   material: acoustic_mat}
+    - {name: clt,      thickness: "175mm",   material: clt, structural: true}   # 5-ply
+  bearing: platform       # CLT bears on top of straw panels below
+  ground_slab: {thickness: "6\"", material: concrete}
+
+roof:
+  assembly:                 # top -> bottom, top of CLT at ROOF level
+    - {name: growing_medium, thickness: "4\"", material: green_roof}
+    - {name: drainage,       thickness: "1\"", material: null}
+    - {name: membrane,       thickness: "1/4\"", material: membrane}
+    - {name: insulation,     thickness: "8\"", material: wood_fibre_insulation}
+    - {name: clt,            thickness: "175mm", material: clt, structural: true}
+  # NOTE: level ROOF = top of roof CLT. Build-up sits above it.
+
+interior_support:
+  # CLT clear span limit. Floors spanning A->C (~25') exceed it, so a
+  # glulam bearing line is introduced. Posts are placed where interior walls
+  # stack on all storeys; anywhere a post has to land in a room it is
+  # flagged in the build report.
+  clt_max_span: "18'-0\""
+  bearing_lines:      # glulam lines; y/x_from/x_to = grid names or feet
+    - {y: "B", x_from: "1", x_to: "9"}          # spine of the main block
+    - {y: "C", x_from: -6, x_to: 23}            # NW wing beyond the porch wall
+    - {y: "C", x_from: 69, x_to: 99}            # SE wing beyond the porch wall
+    - {y: -36.0, x_from: -6, x_to: 23}          # NW wedge (deepest part of the wing)
+  post: {size: ["5 1/2\"", "5 1/2\""], material: glulam}
+  beam: {size: ["5 1/2\"", "12\""], material: glulam, placement: in_floor}  # flush/dropped
+  post_max_spacing: "11'-6\""
+  prefer_stacked_walls: true
+  stacked_wall_search_radius: "4'-0\""
+
+foundation:
+  type: slab_on_grade_with_thickened_edges
+  edge_depth: "2'-0\""

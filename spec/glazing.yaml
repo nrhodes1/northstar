@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# GLAZING & DOORS — opening types and how they sit in the wall
+# ---------------------------------------------------------------------------
+# Opening *locations* live in openings.yaml (one line per opening).
+# Sizes are rough-opening sizes; sill/head are above the storey's level.
+# ---------------------------------------------------------------------------
+
+placement:
+  # Where the window frame sits within the wall depth.
+  #   interior  -> inner face of frame flush with inner face of straw panel
+  #   center    -> centered on the straw panel
+  #   exterior  -> outer face of frame flush with sheathing
+  position: interior
+  offset: 0            # extra push toward interior(+) / exterior(-)
+  reveal_lining: {material: wood_reveal, thickness: "3/4\""}   # exterior reveal liner
+  sill_flashing: {material: coping_metal, slope_deg: 8, projection: "1\""}
+  interior_return: clay_plaster
+
+frame_defaults:
+  frame_width: "2 1/2\""     # face width of frame
+  frame_depth: "4 1/2\""
+  sash_width: "2\""
+  frame_material: window_frame_wood
+  glass_material: glass
+
+types:
+  W1:
+    description: Single operable (A3), tilt-turn
+    width: "2'-8\""
+    sill: "1'-1 1/4\""
+    head: "7'-10\""
+    panes: 1
+  W2:
+    description: Double operable (A1)
+    width: "5'-4\""
+    sill: "1'-1 1/4\""
+    head: "7'-10\""
+    panes: 2
+  W3:
+    description: Fixed narrow light (24")
+    width: "2'-0\""
+    sill: "1'-2\""
+    head: "8'-2\""
+    panes: 1
+  D1:
+    description: Unit entry door, wood w/ glazed panel
+    width: "3'-0\""
+    sill: 0
+    head: "7'-0\""
+    kind: door
+    leaf_material: door_wood
+    vision_lite: {width: "10\"", height: "5'-0\""}
+  D2:
+    description: Double sliding door to balcony (72x84)
+    width: "6'-0\""
+    sill: 0
+    head: "7'-0\""
+    panes: 2
+    kind: slider
+  SF:
+    description: Commercial storefront
+    width: "5'-0\""
+    sill: "1 1/2\""
+    head: "8'-9\""
+    panes: 1
+    kind: storefront
+    frame_material: storefront_frame

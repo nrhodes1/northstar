@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# VIEWS — cameras, lighting, render settings
+# ---------------------------------------------------------------------------
+# Camera positions/targets are [x, y, z] in feet, drawing frame
+# (z above L1). Lens in mm (full-frame equivalent, 36 mm sensor).
+# ---------------------------------------------------------------------------
+
+render:
+  engine: CYCLES
+  resolution: [2400, 1350]
+  samples: 256            # final; drafts override with --samples
+  denoise: true
+  look: AgX - Medium High Contrast
+  exposure: 0.0
+  film_transparent: false
+
+lighting:
+  # Physical sun from location + date/time (America/New_York).
+  date: "2026-10-08"
+  time: "16:30"
+  sky: nishita            # nishita | hdri
+  sun_strength: 1.0
+  sky_strength: 0.1
+  air: 1.0
+  dust: 1.5
+  ozone: 1.0
+
+views:
+  porch_street:
+    description: Street-level view of the shared porch from the River St corner
+    position: [40, -112, 5.4]
+    target: [44, -28, 16]
+    lens: 28
+  aerial_sw:
+    description: Aerial from the southwest, context of block
+    position: [-95, -235, 175]
+    target: [46, -18, 12]
+    lens: 50
+  ne_street:
+    description: NE facade from across the street
+    position: [118, 78, 5.4]
+    target: [48, 0, 18]
+    lens: 26
+  nw_corner:
+    description: Commercial corner (NW) - visible from MBTA / Blue Hill Ave approach
+    position: [-75, -72, 5.4]
+    target: [4, -18, 15]
+    lens: 26
+  axon_se:
+    description: Overhead axon-like view, long lens
+    position: [260, -260, 300]
+    target: [46, -18, 10]
+    lens: 85
