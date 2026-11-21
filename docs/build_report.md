@@ -1,5 +1,5 @@
 # Build report — North Star House
-_Generated 2026-11-21 22:51 from spec/_
+_Generated 2026-11-21 23:10 from spec/_
 
 ## Checks
 
@@ -15,7 +15,7 @@ _Generated 2026-11-21 22:51 from spec/_
 | PASS | Stair stair_se width (IBC 1011.2) | 3'-6" (44" required if occupant load ≥ 50) |
 | PASS | Stories (IBC 504.4) | 4 stories |
 | PASS | Building height to roof (IBC 504.3) | 40'-0" vs 60'-0" |
-| PASS | Zoning height to roof (verify district) | 40'-0" to roof, 42'-9 9/16" to top of PV/parapet vs 45'-0" |
+| PASS | Zoning height to roof (verify district) | 40'-0" to roof, 43'-2 1/2" to top of PV/parapet vs 45'-0" |
 | PASS | Window-to-wall ratio (energy) | 13.7% (glass 1,807 SF / wall 13,229 SF) vs 30% |
 | WARN | Interior posts concealed in stacked walls | 32/51 posts inside partitions |
 | PASS | CLT span between supports | worst 15'-4 5/16" at L2, x=74.3' (limit 18'-0") |

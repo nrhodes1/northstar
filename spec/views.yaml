@@ -43,7 +43,7 @@ views:
     lens: 26
   nw_corner:
     description: Commercial corner (NW) - visible from MBTA / Blue Hill Ave approach
-    position: [-75, -72, 5.4]
+    position: [-16, 40, 5.4]       # on River St, north of the site
     target: [4, -18, 15]
     lens: 26
   axon_se:

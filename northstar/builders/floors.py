@@ -146,6 +146,12 @@ def _planters(model, poly, z, pl, level):
               scatter="meadow")
 
 
+def _plan_north(spec):
+    th = math.radians(spec["project"]["site"]["plan_rotation_deg"])
+    # true north (0,1) in site frame -> drawing frame
+    return np.array([math.sin(th), math.cos(th)])
+
+
 def _pv_field(ctx, model, usable, z_top, pv, name):
     """Herringbone PV layout clipped to `usable`."""
     w, ln = L(pv["module"]["width"]), L(pv["module"]["length"])
@@ -190,16 +196,12 @@ def _pv_field(ctx, model, usable, z_top, pv, name):
     for rct in rects:
         r = affinity.rotate(rct, rot, origin=c)
         mb = r.minimum_rotated_rectangle
-        # tilt about the low edge: model as slab rising across its short side
+        # tilt the module plane to face true south (rise toward north)
         cs = np.asarray(mb.exterior.coords)[:4]
-        e0, e1 = cs[1] - cs[0], cs[2] - cs[1]
-        if np.linalg.norm(e0) < np.linalg.norm(e1):
-            cs = np.roll(cs, -1, axis=0)
-            e0, e1 = cs[1] - cs[0], cs[2] - cs[1]
-        rise = np.linalg.norm(e1) * math.sin(tilt)
+        nrt = _plan_north(ctx.spec)
+        proj = cs @ nrt
         z0 = z_top + rack
-        # build a tilted box via 8 points
-        p = [np.r_[cs[0], z0], np.r_[cs[1], z0], np.r_[cs[2], z0 + rise], np.r_[cs[3], z0 + rise]]
+        p = [np.r_[q, z0 + (pr - proj.min()) * math.tan(tilt)] for q, pr in zip(cs, proj)]
         top = [q + np.array([0, 0, t]) for q in p]
         import trimesh
         verts = np.array(p + top)
