@@ -28,9 +28,9 @@ lighting:
 views:
   porch_street:
     description: Street-level view of the shared porch from the River St corner
-    position: [40, -112, 5.4]
-    target: [44, -28, 16]
-    lens: 28
+    position: [-8, -88, 5.4]      # River St, south of the corner
+    target: [42, -28, 17]
+    lens: 20
   aerial_sw:
     description: Aerial from the southwest, context of block
     position: [-95, -235, 175]

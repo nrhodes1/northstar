@@ -24,7 +24,9 @@ site:
   # 16 porch columns of the SD plans to the Revit export (residual < 4 mm).
   plan_rotation_deg: -47.17447   # rotation of drawing +X about Z (CCW +)
   plan_origin_mm: [-3898.809, 13772.164]
-  level1_elevation_mm: 13614.0   # L1 FFE in the site model's Z datum
+  revit_export_level1_mm: 13614.0  # L1 of the Revit export inside the site .3dm
+  level1_elevation_mm: 12750.0   # L1 FFE (NAVD88 mm). Revit export had 13614; lowered to
+                                 # ~8" above the River St sidewalk (decisions.md D-016)
 
 grids:
   x:   # grid number -> X (ft). 11'-6" bays.

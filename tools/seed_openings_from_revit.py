@@ -39,7 +39,7 @@ def main(path3dm, out="spec/openings.yaml"):
     site = sp["project"]["site"]
     th = math.radians(site["plan_rotation_deg"])
     t = np.array(site["plan_origin_mm"])
-    z0 = site["level1_elevation_mm"]
+    z0 = site["revit_export_level1_mm"]
     R = np.array([[math.cos(th), -math.sin(th)], [math.sin(th), math.cos(th)]])
 
     def to_plan(x, y):

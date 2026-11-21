@@ -1,0 +1,69 @@
+# ---------------------------------------------------------------------------
+# SITE — terrain, ground surfaces, data sources, landscape on our lot
+# ---------------------------------------------------------------------------
+# Context is REBUILT from City of Boston GIS + USGS lidar. The client's
+# Google-tiles .3dm is used only as reference: orthophoto (ground cover),
+# surface heights (roof forms, missing buildings, tree canopy).
+# ---------------------------------------------------------------------------
+
+extent:
+  radius_m: 170            # modelled context radius around grid 1/A
+  terrain_cell_m: 1.0
+  detail_radius_m: 110     # beyond this: simpler buildings (no window detail)
+
+sources:
+  dem:
+    url: https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x32y469_MA_CentralEastern_2021_B21.tif
+    crs: EPSG:26919
+    vertical: NAVD88 (m)    # matches the site model Z datum (checked: median diff 0.05 m)
+  buildings: https://data.boston.gov/dataset/08fd5249-2d75-42ef-ac23-951f3e0ec259/resource/57026638-b4e8-4dfa-8644-0e2cfe925a46/download/boston_buildings_with_roof_breaks_geojson.zip
+  sidewalks: https://data.boston.gov/dataset/57b57bc6-6344-48ca-9316-95961213a38e/resource/2faee1d9-484a-4f3a-b42f-d5c3b6663f75/download/sidewalk_inventory.geojson
+  streets: https://data.boston.gov/dataset/b9b8b634-f28a-410f-9727-b53d0d006308/resource/e850cfd2-2c6e-4af6-9ac4-e03019412d1e/download/boston_street_segments_sam_system.geojson
+  parcels: https://data.boston.gov/dataset/9ef4ed7e-f35c-4821-a27c-fd38a54a78ce/resource/15078d15-9dc5-4779-a15a-bc0f6bfbde0c/download/parcels__2024__geojson.zip
+  street_trees: https://data.boston.gov/dataset/e4c76e72-dcf1-40a0-b426-97c52214a9fe/resource/995cd80f-2489-41bf-b16b-113dba4f2797/download/bprd_trees.csv
+  site_model_3dm: {gdrive_id: 15NWtKM9JI0nE5ZKKdnUp-QTgf2wN7alI, layer: "3D SITE"}
+
+lot:
+  # Property line from A1.00 (registered to the L1 walls; mean residual 0.92 ft).
+  # The SD redline notes the survey alignment is uncertain (D-018).
+  points: [[24.78, -51.47], [-6.91, -39.93], [-5.75, -19.61], [-3.62, 6.19], [98.21, 6.36], [99.25, -11.86], [102.78, -27.92], [105.42, -41.35], [35.63, -52.51], [33.43, -52.62], [29.06, -52.37]]
+
+grading:
+  # L1 FFE vs existing grade: see decisions.md D-016
+  pad_offset: "-6\""        # finished grade at the building = FFE - 6"
+  pad_buffer_m: 1.5         # flat pad around the L1 outline
+  blend_m: 8.0              # distance over which the pad blends into existing grade
+
+surfaces:
+  sidewalk_raise: "6\""     # curb reveal
+  road_material: asphalt
+  sidewalk_material: sidewalk_concrete
+  curb_material: curb_granite
+  curb_width: "6\""
+  lawn_material: terrain_grass
+  paved_lot_material: asphalt
+  # ortho classification (tiles): vegetation if G is the max channel by margin
+  vegetation_margin: 6
+  min_patch_m2: 12
+
+markings:
+  centerline: {material: road_marking_yellow, width: "4\"", double_gap: "4\"", min_street_len_m: 60}
+  crosswalk: {material: road_marking, bar: "2'-0\"", gap: "2'-0\"", depth: "10'-0\"", setback_m: 2.0}
+
+landscape:
+  # Our lot. Hardscape = porch + paths; everything else planted.
+  hardscape_material: pavers_concrete
+  porch_paving_from: gallery      # pave under the gallery deck + stairs
+  paths:
+    - [[46.0, -34.5], [46.0, -52.0]]          # porch to the SW street
+    - [[22.0, -40.0], [12.0, -48.0]]          # NW stair to the corner
+  path_width: "6'-0\""
+  planting_material: meadow_planting
+  mulch_material: landscape_mulch
+  shrub_density_per_m2: 0.9
+  boulders: 14
+  trees:
+    - {at: [8, -50], species: honeylocust, height_m: 8}
+    - {at: [80, -50], species: serviceberry, height_m: 6}
+    - {at: [36, -45], species: serviceberry, height_m: 5}
+    - {at: [60, -44], species: serviceberry, height_m: 5}

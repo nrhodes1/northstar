@@ -38,7 +38,7 @@ def args():
     ap.add_argument("--time", default=None, help="override HH:MM")
     ap.add_argument("--date", default=None)
     ap.add_argument("--cpu-threads", type=int, default=0)
-    return ap.parse_args(argv)
+    return ap.parse_known_args(argv)[0]
 
 
 # ------------------------------------------------------------------ sun
@@ -175,16 +175,48 @@ def build_material(name, d):
         ramp.color_ramp.elements[0].color = [c * 0.55 for c in col[:3]] + [1]
         ramp.color_ramp.elements[1].color = [min(1, c * 1.35) for c in col[:3]] + [1]
         if sh == "sedum":
-            e = ramp.color_ramp.elements.new(0.75)
-            e.color = (0.55, 0.32, 0.18, 1)   # reddish sedum patches
+            e = ramp.color_ramp.elements.new(0.82)
+            e.color = (0.48, 0.30, 0.16, 1)   # reddish sedum patches
+            ramp.color_ramp.elements[-1].position = 0.9
         L_(noise.outputs["Fac"], ramp.inputs[0])
         L_(ramp.outputs[0], bsdf.inputs["Base Color"])
         bump = nt.nodes.new("ShaderNodeBump")
         bump.inputs["Strength"].default_value = 0.6
         L_(noise.outputs["Fac"], bump.inputs["Height"])
         L_(bump.outputs[0], bsdf.inputs["Normal"])
+        if sh in ("foliage", "sedum"):
+            # per-object variation (each tree / roof slightly different)
+            oi = nt.nodes.new("ShaderNodeObjectInfo")
+            hsv = nt.nodes.new("ShaderNodeHueSaturation")
+            mr = nt.nodes.new("ShaderNodeMapRange")
+            mr.inputs["To Min"].default_value = 0.47
+            mr.inputs["To Max"].default_value = 0.54
+            L_(oi.outputs["Random"], mr.inputs["Value"])
+            L_(mr.outputs[0], hsv.inputs["Hue"])
+            mr2 = nt.nodes.new("ShaderNodeMapRange")
+            mr2.inputs["To Min"].default_value = 0.8
+            mr2.inputs["To Max"].default_value = 1.15
+            L_(oi.outputs["Random"], mr2.inputs["Value"])
+            L_(mr2.outputs[0], hsv.inputs["Value"])
+            L_(ramp.outputs[0], hsv.inputs["Color"])
+            L_(hsv.outputs[0], bsdf.inputs["Base Color"])
         if sh == "foliage":
             bsdf.inputs["Subsurface Weight"].default_value = 0.15
+            # leafy cut-out: voronoi cells on the clump surface become gaps
+            vor = nt.nodes.new("ShaderNodeTexVoronoi")
+            vor.feature = "DISTANCE_TO_EDGE"
+            vor.inputs["Scale"].default_value = d.get("leaf_scale", 7.0)
+            L_(tc.outputs["Object"], vor.inputs["Vector"])
+            thr = nt.nodes.new("ShaderNodeMath")
+            thr.operation = "GREATER_THAN"
+            thr.inputs[1].default_value = d.get("leaf_gap", 0.06)
+            L_(vor.outputs["Distance"], thr.inputs[0])
+            tr = nt.nodes.new("ShaderNodeBsdfTransparent")
+            mix = nt.nodes.new("ShaderNodeMixShader")
+            L_(thr.outputs[0], mix.inputs["Fac"])
+            L_(tr.outputs[0], mix.inputs[1])
+            L_(bsdf.outputs[0], mix.inputs[2])
+            L_(mix.outputs[0], out.inputs[0])
     elif sh in ("pavers", "asphalt"):
         tc = nt.nodes.new("ShaderNodeTexCoord")
         if sh == "pavers":

@@ -29,11 +29,11 @@ acoustic_mat:         {shader: principled, color: [0.2, 0.2, 0.2], roughness: 0.
 concrete:             {shader: principled, color: [0.62, 0.61, 0.58], roughness: 0.85}
 membrane:             {shader: principled, color: [0.15, 0.15, 0.15], roughness: 0.7}
 wood_fibre_insulation: {shader: principled, color: [0.6, 0.45, 0.3], roughness: 0.95}
-green_roof:           {shader: sedum, color: [0.33, 0.40, 0.18], roughness: 0.9}
-sedum:                {shader: sedum, color: [0.36, 0.42, 0.20], roughness: 0.9}
+green_roof:           {shader: sedum, color: [0.30, 0.44, 0.15], roughness: 0.9}
+sedum:                {shader: sedum, color: [0.32, 0.46, 0.16], roughness: 0.9}
 pv_module:            {shader: principled, color: [0.03, 0.05, 0.09], roughness: 0.12, metallic: 0.3, coat: 1.0}
 pv_frame:             {shader: principled, color: [0.75, 0.77, 0.78], roughness: 0.3, metallic: 1.0}
-steel_painted_dark:   {shader: principled, color: [0.22, 0.24, 0.26], roughness: 0.45, metallic: 0.6}
+steel_painted_dark:   {shader: principled, color: [0.16, 0.17, 0.18], roughness: 0.5, metallic: 0.15}
 grating_galv:         {shader: principled, color: [0.55, 0.57, 0.58], roughness: 0.5, metallic: 0.9}
 decking_wood:         {shader: procedural_wood, color: [0.55, 0.42, 0.30], roughness: 0.7}
 soffit_wood:          {shader: procedural_wood, color: [0.74, 0.55, 0.35], roughness: 0.6}

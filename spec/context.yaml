@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# CONTEXT — how neighbouring buildings and trees are rebuilt (medium detail)
+# ---------------------------------------------------------------------------
+
+buildings:
+  # Height source priority: tiles DSM (current) > Boston 2010 roof breaks.
+  floor_height_m: 3.05
+  ground_floor_commercial_m: 4.0
+  roof_detection:
+    flat_if_range_below_m: 0.9   # p90-p10 of DSM inside eroded footprint
+    min_pitch_rise_m: 1.2
+  add_missing_from_tiles: true   # tall non-vegetated DSM blobs with no footprint
+  missing_min_area_m2: 60
+  windows:
+    enabled: true
+    width_m: 0.95
+    height_m: 1.55
+    sill_m: 0.85
+    spacing_m: 2.6
+    edge_margin_m: 0.9
+    frame_m: 0.08
+  typologies:
+    # first rule that matches wins. use = Boston land-use code prefix.
+    - {name: tower,      min_height_m: 16, material: [ctx_panel_white, ctx_panel_blue], roof: ctx_roof_white}
+    - {name: apartment,  min_height_m: 10, use: [A, R4, RC], material: [ctx_brick], roof: ctx_roof_flat}
+    - {name: commercial, use: [C, CM, CL, I, E, EA], material: [ctx_stucco, ctx_brick, ctx_vinyl_white], roof: ctx_roof_flat}
+    - {name: house,      material: [ctx_vinyl_white, ctx_vinyl_grey, ctx_vinyl_beige, ctx_vinyl_blue], roof: ctx_roof_asphalt}
+
+trees:
+  sources: [street_trees, canopy]   # Boston BPRD inventory + tiles canopy peaks
+  canopy_min_height_m: 3.0
+  canopy_peak_spacing_m: 5.0
+  crown_ratio: 0.38                 # crown radius / height
+  variants: 6
+  bark_material: tree_bark
+  leaf_material: tree_leaves
+  season_tint: [1.0, 1.0, 1.0]      # multiply leaf colour (autumn: [1.4, 0.9, 0.5])
