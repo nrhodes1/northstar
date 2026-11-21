@@ -102,6 +102,50 @@ def _uv(nt):
     return tc, sep
 
 
+def _rib_bump(nt, bsdf, rib):
+    """Cladding relief from envelope.yaml cladding_types.profile.
+    sine = corrugated, seam = standing seam ridges, board = board joints."""
+    L_ = nt.links.new
+    tc, sep = _uv(nt)
+    axis = "X" if rib.get("orientation", "vertical") == "vertical" else "Y"
+    div = nt.nodes.new("ShaderNodeMath")
+    div.operation = "DIVIDE"
+    div.inputs[1].default_value = rib["pitch"]
+    L_(sep.outputs[axis], div.inputs[0])
+    fr = nt.nodes.new("ShaderNodeMath")
+    fr.operation = "FRACT"
+    L_(div.outputs[0], fr.inputs[0])
+    shape = rib.get("shape", "sine")
+    if shape == "board":
+        h = nt.nodes.new("ShaderNodeMath")       # 1 on the board face, 0 in the joint
+        h.operation = "GREATER_THAN"
+        h.inputs[1].default_value = 0.05
+        L_(fr.outputs[0], h.inputs[0])
+    else:
+        ang = nt.nodes.new("ShaderNodeMath")
+        ang.operation = "MULTIPLY"
+        ang.inputs[1].default_value = 2 * math.pi
+        L_(fr.outputs[0], ang.inputs[0])
+        h = nt.nodes.new("ShaderNodeMath")
+        h.operation = "SINE"
+        L_(ang.outputs[0], h.inputs[0])
+        if shape == "seam":                       # narrow ridge once per pan
+            pos = nt.nodes.new("ShaderNodeMath")
+            pos.operation = "MAXIMUM"
+            pos.inputs[1].default_value = 0.0
+            L_(h.outputs[0], pos.inputs[0])
+            pw = nt.nodes.new("ShaderNodeMath")
+            pw.operation = "POWER"
+            pw.inputs[1].default_value = 40
+            L_(pos.outputs[0], pw.inputs[0])
+            h = pw
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 1.0
+    bump.inputs["Distance"].default_value = rib["depth"]
+    L_(h.outputs[0], bump.inputs["Height"])
+    L_(bump.outputs[0], bsdf.inputs["Normal"])
+
+
 def build_material(name, d):
     mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     nt, bsdf, out = _nodes(mat)
@@ -120,28 +164,7 @@ def build_material(name, d):
         bsdf.inputs["Base Color"].default_value = col
     elif sh == "corrugated_metal":
         tc, sep = _uv(nt)
-        pitch = d.get("pitch", 0.068)
-        depth = d.get("depth", 0.022)
-        mul = nt.nodes.new("ShaderNodeMath")
-        mul.operation = "MULTIPLY"
-        mul.inputs[1].default_value = 2 * math.pi / pitch
-        axis = "X" if d.get("orientation", "vertical") == "vertical" else "Y"
-        L_(sep.outputs[axis], mul.inputs[0])
-        sin = nt.nodes.new("ShaderNodeMath")
-        sin.operation = "SINE"
-        L_(mul.outputs[0], sin.inputs[0])
-        if d.get("profile") == "seam":
-            pw = nt.nodes.new("ShaderNodeMath")
-            pw.operation = "POWER"
-            pw.inputs[1].default_value = 40
-            L_(sin.outputs[0], pw.inputs[0])
-            sin = pw
-        bump = nt.nodes.new("ShaderNodeBump")
-        bump.inputs["Strength"].default_value = 1.0
-        bump.inputs["Distance"].default_value = depth
-        L_(sin.outputs[0], bump.inputs["Height"])
-        L_(bump.outputs[0], bsdf.inputs["Normal"])
-        # subtle weathering/streak variation
+        # subtle weathering / streak variation in roughness
         noise = nt.nodes.new("ShaderNodeTexNoise")
         noise.inputs["Scale"].default_value = 0.6
         L_(tc.outputs["UV"], noise.inputs["Vector"])
@@ -246,6 +269,8 @@ def build_material(name, d):
             ramp.color_ramp.elements[1].color = [c * 1.25 for c in col[:3]] + [1]
             L_(noise.outputs["Fac"], ramp.inputs[0])
             L_(ramp.outputs[0], bsdf.inputs["Base Color"])
+    if d.get("rib"):
+        _rib_bump(nt, bsdf, d["rib"])
     if d.get("brick"):
         tc, sep = _uv(nt)
         brick = nt.nodes.new("ShaderNodeTexBrick")

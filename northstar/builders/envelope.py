@@ -117,19 +117,48 @@ def build_walls(ctx: Ctx, model: Model, openings):
 def _panel_layout(ctx, model, st, P_, zb, zt):
     pan = ctx.spec["envelope"]["panelization"]
     mod = L(pan["module_width"])
+    min_w = L(pan.get("min_width", 0))
+    max_h = L(pan["max_height"]) if pan.get("max_height") else None
+    rows = 1
+    if max_h and (zt - zb) > max_h:
+        rows = math.ceil((zt - zb) / max_h)
     d0 = ctx.structure_face
     face = G.inset(P_, d0)
-    n = 0
+    n, short = 0, 0
     for poly in G.as_polys(face):
         for a, b in G.edges(poly):
             Lg = float(np.linalg.norm(b - a))
             k = max(1, math.ceil(Lg / mod - 1e-6))
-            n += k
+            if Lg / k < min_w:
+                short += 1
+            n += k * rows
             d = G.unit(b - a)
             for i in range(1, k):
                 p = a + d * (Lg * i / k)
-                model.curve(f"envelope::panel_joints", [(p[0], p[1], zb), (p[0], p[1], zt)], storey=st)
-    model.flag(f"Straw panels {st}: {n} panels (module {fmt_ftin(mod)}), height {fmt_ftin(zt - zb)}")
+                model.curve("envelope::panel_joints", [(p[0], p[1], zb), (p[0], p[1], zt)], storey=st)
+            for r in range(1, rows):
+                z = zb + (zt - zb) * r / rows
+                model.curve("envelope::panel_joints", [(a[0], a[1], z), (b[0], b[1], z)], storey=st)
+    msg = (f"Straw panels {st}: {n} panels (max width {fmt_ftin(mod)}), "
+           f"{rows} row(s) of {fmt_ftin((zt - zb) / rows)}")
+    if short:
+        msg += f"; {short} wall run(s) narrower than {fmt_ftin(min_w)} -> site-built infill"
+    model.flag(msg)
+
+
+def build_base_flashing(ctx: Ctx, model: Model):
+    base = ctx.spec["envelope"].get("base", {})
+    if not base.get("drip_flashing"):
+        return
+    st = list(ctx.outlines)[0]
+    P_ = ctx.outlines[st]
+    proj = L(base.get("flashing_projection", "1\""))
+    h = L(base.get("flashing_height", "2\""))
+    clad_back = ctx.layers[0][2] + (ctx.layers[1][2] - ctx.layers[1][1] if ctx.layers[1][3] is None else 0)
+    zb = ctx.spec.level_z(st) - L("6\"")
+    band = G.ring(P_, -proj, clad_back)
+    model.add("envelope", "base/drip_flashing", "IfcCovering", base.get("flashing_material", "coping_metal"),
+              G.extrude(band, zb - 0.01, zb + h), level=st)
 
 
 # ------------------------------------------------------------------ windows

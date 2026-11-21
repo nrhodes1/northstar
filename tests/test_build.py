@@ -26,7 +26,28 @@ def test_wall_assembly():
     ctx = Ctx.build(specmod.load())
     names = [l[0] for l in ctx.layers]
     assert names[0] == "cladding" and "straw" in names
-    assert ctx.wall_T == pytest.approx(L("19 1/2\"") + (L("400mm") - L("15 3/4\"")), abs=0.002)
+    assert ctx.wall_T == pytest.approx(L("7/8\"") + L("1 1/2\"") + L("5/8\"") + L("400mm") + L("3/4\""))
+
+
+@pytest.mark.parametrize("ctype", ["corrugated_metal", "standing_seam", "wood_rainscreen"])
+def test_one_line_cladding_swap(ctype):
+    """Changing only `cladding:` swaps the layer's material and thickness."""
+    sp = specmod.load()
+    env = sp["envelope"]
+    env["assemblies"][env["default_assembly"]]["cladding"] = ctype
+    ctx = Ctx.build(sp)
+    ct = env["cladding_types"][ctype]
+    name, d0, d1, mat, _ = ctx.layers[0]
+    assert mat == ct["material"]
+    assert d1 - d0 == pytest.approx(L(ct["thickness"]))
+
+
+def test_unknown_cladding_is_rejected():
+    sp = specmod.load()
+    env = sp["envelope"]
+    env["assemblies"][env["default_assembly"]]["cladding"] = "vinyl"
+    with pytest.raises(KeyError):
+        Ctx.build(sp)
 
 
 @pytest.fixture(scope="module")

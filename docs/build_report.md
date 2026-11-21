@@ -1,5 +1,5 @@
 # Build report — North Star House
-_Generated 2026-11-21 23:10 from spec/_
+_Generated 2026-11-21 23:59 from spec/_
 
 ## Checks
 
@@ -34,6 +34,7 @@ _Generated 2026-11-21 23:10 from spec/_
 | balconies | deck/framing | steel_painted_dark | 29 |
 | balconies | deck/surface | decking_wood | 51 |
 | balconies | guardrails | steel_painted_dark | 11 |
+| envelope | base/drip_flashing | coping_metal | 18 |
 | envelope | parapet/cladding | corrugated_galvalume | 89 |
 | envelope | parapet/coping | coping_metal | 100 |
 | envelope | parapet/plaster | clay_plaster | 67 |
@@ -101,10 +102,10 @@ _Generated 2026-11-21 23:10 from spec/_
 
 ## Build log / flags
 
-- Straw panels L1: 84 panels (module 3'-11 1/4"), height 9'-2 3/8"
-- Straw panels L2: 97 panels (module 3'-11 1/4"), height 9'-2 3/8"
-- Straw panels L3: 91 panels (module 3'-11 1/4"), height 9'-2 3/8"
-- Straw panels L4: 93 panels (module 3'-11 1/4"), height 9'-5 1/8"
+- Straw panels L1: 84 panels (max width 3'-11 1/4"), 1 row(s) of 9'-2 3/8"
+- Straw panels L2: 97 panels (max width 3'-11 1/4"), 1 row(s) of 9'-2 3/8"
+- Straw panels L3: 91 panels (max width 3'-11 1/4"), 1 row(s) of 9'-2 3/8"
+- Straw panels L4: 93 panels (max width 3'-11 1/4"), 1 row(s) of 9'-5 1/8"
 - POST NOT IN WALL: L1 at x=11.64', grid B
 - POST NOT IN WALL: L1 at x=34.50', grid B
 - POST NOT IN WALL: L1 at x=57.50', grid B

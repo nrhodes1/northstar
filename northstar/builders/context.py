@@ -20,6 +20,7 @@ class Ctx:
     floor_T: float = 0.0
     roof_T: float = 0.0                                # build-up above roof CLT
     roof_clt: float = 0.0
+    cladding: str = ""
 
     @classmethod
     def build(cls, spec: Spec) -> "Ctx":
@@ -30,10 +31,14 @@ class Ctx:
             c.outlines[st] = unary_union([p for _, p in ps])
         env = spec["envelope"]
         asm = env["assemblies"][env["default_assembly"]]
-        clad = env["cladding_types"][asm["cladding"]]
+        ctypes = env["cladding_types"]
+        if asm["cladding"] not in ctypes:
+            raise KeyError(f"envelope.yaml: cladding '{asm['cladding']}' is not one of {sorted(ctypes)}")
+        clad = ctypes[asm["cladding"]]
+        c.cladding = asm["cladding"]
         d = 0.0
         for lay in asm["layers"]:
-            t = L(lay["thickness"])
+            t = L(clad["thickness"]) if lay["thickness"] == "CLADDING" else L(lay["thickness"])
             mat = lay.get("material")
             if mat == "CLADDING":
                 mat = clad["material"]

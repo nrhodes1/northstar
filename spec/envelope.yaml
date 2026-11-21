@@ -3,8 +3,9 @@
 # ---------------------------------------------------------------------------
 # Every exterior wall is built from `assemblies.<name>.layers`, listed from
 # OUTSIDE to INSIDE, starting at the outline in massing.yaml.
-# Swap cladding by editing the first layer (or pointing `cladding` at
-# another entry in `cladding_types`).
+# Swap cladding with ONE line: set `cladding:` below to any key in
+# `cladding_types`. The cladding layer's thickness, material and rendered
+# rib profile all come from that entry.
 # ---------------------------------------------------------------------------
 
 default_assembly: straw_panel_rainscreen
@@ -14,34 +15,39 @@ assemblies:
     description: >
       Load-bearing prefabricated straw panel (basis of design: Ecococon;
       New Frameworks equivalent) with ventilated rainscreen.
-    cladding: corrugated_metal          # -> cladding_types
+    cladding: corrugated_metal          # <- ONE-LINE SWAP: corrugated_metal | standing_seam | wood_rainscreen
     layers:                              # outside -> inside
-      - {name: cladding,  thickness: "7/8\"",  material: CLADDING}  # resolved from cladding_types
+      - {name: cladding,  thickness: CLADDING, material: CLADDING}  # both resolved from cladding_types
       - {name: cavity,    thickness: "1 1/2\"", material: null}     # battens / ventilated gap (no solid)
       - {name: sheathing, thickness: "5/8\"",  material: wood_fibre_board}
       - {name: straw,     thickness: "400mm",  material: straw_panel, structural: true}
       - {name: plaster,   thickness: "3/4\"",  material: clay_plaster}
 
 cladding_types:
+  # thickness = depth the cladding occupies in the wall (sheet + profile).
+  # profile drives the rendered ribs: shape sine | seam | board,
+  # pitch = rib/board spacing, depth = relief, orientation = rib direction.
   corrugated_metal:
     material: corrugated_galvalume
-    orientation: vertical          # ribs vertical
-    profile: {pitch: "2 2/3\"", depth: "7/8\""}
+    thickness: "7/8\""
+    profile: {shape: sine, pitch: "2 2/3\"", depth: "7/8\"", orientation: vertical}
   standing_seam:
     material: standing_seam_zinc
-    orientation: vertical
-    profile: {pitch: "16\"", depth: "1\""}
+    thickness: "1\""
+    profile: {shape: seam, pitch: "16\"", depth: "1\"", orientation: vertical}
   wood_rainscreen:
     material: charred_larch
-    orientation: vertical
-    profile: {pitch: "5 1/2\"", depth: "3/4\""}
+    thickness: "3/4\""
+    profile: {shape: board, pitch: "5 1/2\"", depth: "1/4\"", orientation: vertical}
 
 panelization:
-  # Straw panel modules (Ecococon: 400 mm thick, widths up to 1200 mm,
-  # storey-height). Panels are laid out per wall run from each corner.
+  # Straw panel modules (Ecococon: 400 mm thick, widths up to 1200 mm).
+  # Each wall run is divided into equal panels no wider than module_width.
+  # Runs shorter than min_width are flagged (site-built infill); storeys
+  # taller than max_height get a horizontal joint (two panel rows).
   module_width: "1200mm"
   min_width: "300mm"
-  storey_height: true
+  max_height: "3000mm"
 
 parapet:
   height: "2'-4\""          # above top of roof structure
@@ -49,5 +55,8 @@ parapet:
   coping_overhang: "1 1/2\""
 
 base:
-  # L1 sits back ~1'-0" from upper floors (see massing). Optional base trim.
-  drip_flashing: true
+  # L1 sits back ~1'-0" from upper floors (see massing).
+  drip_flashing: true            # metal drip at the foot of the cladding
+  flashing_material: coping_metal
+  flashing_projection: "1\""     # beyond the face of cladding
+  flashing_height: "2\""

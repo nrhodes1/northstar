@@ -21,7 +21,7 @@ spec/*.yaml ──► northstar/builders ──► out/northstar_building.3dm �
 | You want to change… | Edit |
 |---|---|
 | Storey outlines / massing | `spec/massing.yaml` |
-| Wall assembly, cladding (corrugated → standing seam → wood) | `spec/envelope.yaml` (`assemblies`, `cladding_types`) |
+| Cladding: one line, `cladding:` in `spec/envelope.yaml` (corrugated_metal / standing_seam / wood_rainscreen); add new types under `cladding_types` | `spec/envelope.yaml` |
 | Window types, how deep windows sit in the wall | `spec/glazing.yaml` (`placement.position`, `types`) |
 | Individual window/door positions | `spec/openings.yaml` |
 | Floor/roof build-ups, CLT, bearing lines, posts | `spec/structure.yaml` |

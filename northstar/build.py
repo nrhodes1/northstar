@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "out"
 
 STEPS = [
-    ("envelope", lambda c, m, o: envelope.build_walls(c, m, o)),
+    ("envelope", lambda c, m, o: (envelope.build_walls(c, m, o), envelope.build_base_flashing(c, m))),
     ("glazing", lambda c, m, o: envelope.build_openings(c, m, o)),
     ("structure", lambda c, m, o: (floors.build_floors(c, m), structure.build_bearing_lines(c, m))),
     ("interiors", lambda c, m, o: structure.build_interiors(c, m)),
@@ -60,6 +60,13 @@ def write_render_config(sp, out):
     for v in views["views"].values():
         v["position"] = [L(c) for c in v["position"]]
         v["target"] = [L(c) for c in v["target"]]
+    # cladding rib profiles live in envelope.yaml; attach them to their materials
+    for ct in sp["envelope"]["cladding_types"].values():
+        prof = ct.get("profile") or {}
+        if ct["material"] in mats and prof:
+            mats[ct["material"]]["rib"] = {"shape": prof.get("shape", "sine"), "pitch": L(prof["pitch"]),
+                                           "depth": L(prof["depth"]),
+                                           "orientation": prof.get("orientation", "vertical")}
     site = sp["project"]["site"]
     cfg = {"materials": mats, "views": views,
            "site": {"lat": site["anchor_lat"], "lon": site["anchor_lon"],

@@ -1,6 +1,7 @@
 # ---------------------------------------------------------------------------
 # MATERIALS — one library for Rhino display colours AND Blender shaders
 # ---------------------------------------------------------------------------
+# Cladding rib profiles come from envelope.yaml cladding_types (not here).
 # shader: principled | corrugated_metal | glass | foliage | procedural_wood
 #         | pavers | grass | asphalt | sedum
 # color: sRGB 0-1. roughness / metallic: Principled BSDF values.
@@ -8,8 +9,8 @@
 # To restyle the building, change entries here — geometry is untouched.
 # ---------------------------------------------------------------------------
 
-corrugated_galvalume: {shader: corrugated_metal, color: [0.66, 0.69, 0.71], roughness: 0.38, metallic: 1.0, pitch: "2 2/3\"", depth: "7/8\"", orientation: vertical}
-standing_seam_zinc:   {shader: corrugated_metal, color: [0.48, 0.51, 0.53], roughness: 0.45, metallic: 0.9, pitch: "16\"", depth: "1\"", orientation: vertical, profile: seam}
+corrugated_galvalume: {shader: corrugated_metal, color: [0.66, 0.69, 0.71], roughness: 0.38, metallic: 1.0}
+standing_seam_zinc:   {shader: corrugated_metal, color: [0.48, 0.51, 0.53], roughness: 0.45, metallic: 0.9}
 charred_larch:        {shader: procedural_wood, color: [0.08, 0.07, 0.065], roughness: 0.8}
 coping_metal:         {shader: principled, color: [0.62, 0.65, 0.67], roughness: 0.35, metallic: 1.0}
 wood_reveal:          {shader: procedural_wood, color: [0.78, 0.46, 0.22], roughness: 0.55}
