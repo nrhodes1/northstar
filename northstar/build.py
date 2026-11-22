@@ -19,7 +19,7 @@ OUT = ROOT / "out"
 
 STEPS = [
     ("envelope", lambda c, m, o: (envelope.build_walls(c, m, o), envelope.build_base_flashing(c, m))),
-    ("glazing", lambda c, m, o: envelope.build_openings(c, m, o)),
+    ("glazing", lambda c, m, o: (envelope.build_openings(c, m, o), envelope.build_dressing(c, m, o))),
     ("structure", lambda c, m, o: (floors.build_floors(c, m), structure.build_bearing_lines(c, m))),
     ("interiors", lambda c, m, o: structure.build_interiors(c, m)),
     ("roof", lambda c, m, o: floors.build_roofs(c, m)),
@@ -71,8 +71,25 @@ def write_render_config(sp, out):
             mats[ct["material"]]["rib"] = {"shape": prof.get("shape", "sine"), "pitch": L(prof["pitch"]),
                                            "depth": L(prof["depth"]),
                                            "orientation": prof.get("orientation", "vertical")}
+    # assets (Poly Haven, cache/assets) + rooms for interior lighting
+    import yaml as _y
+    assets_dir = ROOT / "cache" / "assets"
+    aspec = sp.get("assets") or {}
+    hdri = aspec.get("hdri", {}).get("id")
+    rooms = []
+    for st, rows in ((sp.get("rooms") or {}).get("rooms") or {}).items():
+        z = sp.level_z(st) + L("7'-9\"")
+        for r in rows:
+            nm = (r.get("name") or "").upper()
+            kind = "outdoor" if any(k in nm for k in ("BALCONY", "TERRACE")) else "room"
+            rooms.append({"x": L(r["at"][0]), "y": L(r["at"][1]), "z": z, "kind": kind,
+                          "area_m2": (r.get("area_sf") or 100) * 0.0929})
+    for v in views["views"].values():
+        if "shift" in v:
+            v["shift"] = [float(c) for c in v["shift"]]
     site = sp["project"]["site"]
-    cfg = {"materials": mats, "views": views,
+    cfg = {"assets_dir": str(assets_dir), "hdri_path": str(assets_dir / "hdri" / f"{hdri}.exr") if hdri else None,
+           "rooms": rooms, "models": aspec.get("models", {}),"materials": mats, "views": views,
            "site": {"lat": site["anchor_lat"], "lon": site["anchor_lon"],
                     "plan_rotation_deg": site["plan_rotation_deg"]}}
     with open(out / "render_config.json", "w") as f:

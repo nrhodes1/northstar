@@ -60,6 +60,9 @@ added_streets:
     right:                          # far side (south)
       - {kind: sidewalk, width: "8'-0\""}
     crosswalk_at_start: true        # at River St
+    street_lamps: {spacing: "90'-0\"", side: left, offset_from_curb: "2'-0\"", start_offset: "45'-0\""}
+    hydrant_at: "18'-0\""           # from the start, lot side
+    manholes: {spacing: "120'-0\""}
     street_trees: {spacing: "42'-0\"", height_m: 5.0, crown_ratio: 0.22, species: honeylocust, start_offset: "30'-0\""}
 
 markings:
@@ -76,7 +79,7 @@ landscape:
   path_width: "6'-0\""
   planting_material: meadow_planting
   mulch_material: landscape_mulch
-  shrub_density_per_m2: 0.9
+  shrub_density_per_m2: 4.5      # dense meadow-style beds (design rendering)
   boulders: 14
   trees:
     - {at: [8, -50], species: honeylocust, height_m: 8}

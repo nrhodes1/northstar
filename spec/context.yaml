@@ -11,7 +11,10 @@ buildings:
     min_pitch_rise_m: 1.2
   add_missing_from_tiles: true   # tall non-vegetated DSM blobs with no footprint
   missing_min_area_m2: 60
-  windows:
+  high_res:                      # buildings within site.extent.detail_radius_m
+    enabled: true
+    window: {recess_m: 0.14}       # sizes default by typology (house / apartment)
+  windows:                         # simple windows beyond the detail radius
     enabled: true
     width_m: 0.95
     height_m: 1.55

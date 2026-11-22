@@ -65,3 +65,7 @@ types:
     panes: 1
     kind: storefront
     frame_material: storefront_frame
+
+dressing:
+  # Render-only interior dressing behind the glass (not architecture).
+  curtains: {fraction: 0.45, seed: 7, material: curtain_sheer, gap: "3\"", min_cover: 0.35}

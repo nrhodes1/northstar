@@ -157,7 +157,7 @@ def added_streets(sp, disk, lot):
     rows = sp["site"].get("added_streets") or []
     if not rows:
         return None
-    roads, bands, crossings, trees = [], [], [], []
+    roads, bands, crossings, trees, furniture = [], [], [], [], []
     for st in rows:
         cl = LineString([P(p) for p in st["centerline"]])
         hw = L(st["width"]) / 2
@@ -182,9 +182,31 @@ def added_streets(sp, disk, lot):
                 off += w
         if st.get("crosswalk_at_start"):
             crossings.append((cl, hw))
+        # street furniture
+        ang = math.atan2(*(np.array(cl.coords[-1]) - np.array(cl.coords[0]))[::-1])
+        if st.get("street_lamps"):
+            sl = st["street_lamps"]
+            sign = 1 if sl.get("side", "left") == "left" else -1
+            off = cl.offset_curve(sign * (hw + L(sl.get("offset_from_curb", "2'"))))
+            d = L(sl.get("start_offset", 0))
+            while d < off.length:
+                p = off.interpolate(d)
+                furniture.append({"kind": "street_lamp", "x": p.x, "y": p.y,
+                                  "rot": ang + (math.pi / 2 if sign > 0 else -math.pi / 2)})
+                d += L(sl["spacing"])
+        if st.get("hydrant_at"):
+            p = cl.offset_curve(hw + 0.6).interpolate(L(st["hydrant_at"]))
+            furniture.append({"kind": "hydrant", "x": p.x, "y": p.y, "rot": ang})
+        if st.get("manholes"):
+            d = L(st["manholes"]["spacing"]) / 2
+            while d < cl.length:
+                p = cl.offset_curve(-hw / 3).interpolate(d)
+                furniture.append({"kind": "manhole", "x": p.x, "y": p.y, "rot": 0.0})
+                d += L(st["manholes"]["spacing"])
     road = unary_union(roads).intersection(disk)
     allg = unary_union([road] + [g for _, g, _ in bands])
-    return {"road": road, "bands": bands, "all": allg, "crossings": crossings, "trees": trees}
+    return {"road": road, "bands": bands, "all": allg, "crossings": crossings, "trees": trees,
+            "furniture": furniture}
 
 
 # ---------------------------------------------------------------- surfaces
@@ -372,6 +394,10 @@ def build_lot_landscape(sd: SiteData, ctx, model, grade, lot, scatter):
                                             "s": float(rng.uniform(0.4, 0.9))})
                 break
     extra = getattr(ctx, "_added_streets", None)
+    for f in (extra or {}).get("furniture", []):
+        f = dict(f)
+        f["z"] = float(grade.sample(f["x"], f["y"])) + (0.13 if f["kind"] != "manhole" else -0.005)
+        scatter.setdefault("furniture", []).append(f)
     for t in (extra or {}).get("trees", []):
         scatter["trees"].append({"x": t["x"], "y": t["y"], "z": float(grade.sample(t["x"], t["y"])),
                                  "h": t["h"], "r": t["r"], "species": t["species"], "src": "design"})

@@ -72,6 +72,10 @@ def build_context(sd: SiteData, ctx, model, lot, grade):
     cb = sp["context"]["buildings"]
     detail_r = sp["site"]["extent"]["detail_radius_m"]
     disk = Point(0, 0).buffer(sd.R)
+    streets = [ln for ln, _ in sd.streets]
+    for st_ in sp["site"].get("added_streets") or []:
+        from ..units import P as _P
+        streets.append(LineString([_P(q) for q in st_["centerline"]]))
     footprints = []
     count = {"from_gis": 0, "pitched": 0, "added_from_tiles": 0, "height_updated": 0}
     polys = []
@@ -117,9 +121,15 @@ def build_context(sd: SiteData, ctx, model, lot, grade):
             z_eave = min(z_eave, z_top - 1.2)
         else:
             z_eave = z_top
-        body = G.extrude(p, base, z_eave)
-        model.add("context", f"buildings/walls", "IfcBuilding", wall_mat, body, typology=typ["name"],
-                  height_m=round(h, 1))
+        near = p.centroid.distance(Point(0, 0)) < detail_r
+        hr = cb.get("high_res", {}).get("enabled") and near
+        if hr:
+            from . import context_hr
+            context_hr.build(model, p, base, z_eave, gnd, typ["name"], streets, sp, pitched, i)
+        else:
+            body = G.extrude(p, base, z_eave)
+            model.add("context", f"buildings/walls", "IfcBuilding", wall_mat, body, typology=typ["name"],
+                      height_m=round(h, 1))
         if pitched:
             rect = p.minimum_rotated_rectangle
             # hip if the DSM drops near both short ends
@@ -137,7 +147,7 @@ def build_context(sd: SiteData, ctx, model, lot, grade):
             par = G.extrude(G.ring(p, 0, 0.25), z_eave, z_eave + 0.6)
             cap = G.extrude(p.buffer(-0.25), z_eave - 0.05, z_eave + 0.05)
             model.add("context", "buildings/roofs", "IfcRoof", roof_mat, G.concat([par, cap]))
-        if cb["windows"]["enabled"] and p.centroid.distance(Point(0, 0)) < detail_r:
+        if cb["windows"]["enabled"] and not hr and p.centroid.distance(Point(0, 0)) < sd.R:
             _windows(model, p, base + 0.2, z_eave, cb, typ, gnd)
         footprints.append(p)
         count["from_gis"] += 1
@@ -251,11 +261,18 @@ def _missing_from_tiles(sd, ctx, model, lot, have, grade, cb):
             if h < 4:
                 continue
             typ = next(t for t in cb["typologies"] if h >= t.get("min_height_m", 0) and "use" not in t)
-            body = G.extrude(qq, float(np.min(zg)) - 0.2, gnd + h)
-            model.add("context", "buildings/walls", "IfcBuilding", _pick(typ["material"], qq.area), body,
-                      typology=typ["name"] + "_from_tiles", height_m=round(h, 1))
+            near = qq.centroid.distance(Point(0, 0)) < ctx.spec["site"]["extent"]["detail_radius_m"]
+            if cb.get("high_res", {}).get("enabled") and near and qq.geom_type == "Polygon":
+                from . import context_hr
+                streets = [ln for ln, _ in sd.streets]
+                context_hr.build(model, qq, float(np.min(zg)) - 0.2, gnd + h, gnd, typ["name"], streets,
+                                 ctx.spec, False, round(qq.area))
+            else:
+                body = G.extrude(qq, float(np.min(zg)) - 0.2, gnd + h)
+                model.add("context", "buildings/walls", "IfcBuilding", _pick(typ["material"], qq.area), body,
+                          typology=typ["name"] + "_from_tiles", height_m=round(h, 1))
+                _windows(model, qq, float(np.min(zg)), gnd + h, cb, typ, gnd)
             par = G.extrude(G.ring(qq, 0, 0.25), gnd + h, gnd + h + 0.8)
             model.add("context", "buildings/roofs", "IfcRoof", typ["roof"], par)
-            _windows(model, qq, float(np.min(zg)), gnd + h, cb, typ, gnd)
             added.append(qq)
     return added

@@ -266,3 +266,32 @@ def build_openings(ctx: Ctx, model: Model, openings):
         gm = (f_out + f_in) / 2
         glass = box(ui0 + fw, ui1 - fw, gm - L("1/2\""), gm + L("1/2\""), zi0 + fw, zi1 - fw)
         model.add("glazing", "glass", "IfcWindow", fd["glass_material"], glass, level=o["storey"], **tag)
+
+
+def build_dressing(ctx: Ctx, model: Model, openings):
+    """Sheer curtains behind a share of the windows (render dressing)."""
+    import random
+    dr = (ctx.spec["glazing"].get("dressing") or {}).get("curtains")
+    if not dr:
+        return
+    rnd = random.Random(dr.get("seed", 1))
+    gap = L(dr.get("gap", "3\""))
+    inner = ctx.wall_T + gap
+    parts = []
+    for o in openings:
+        if o["ty"].get("kind", "window") not in ("window", "slider") or rnd.random() > dr["fraction"]:
+            continue
+        z0 = ctx.spec.level_z(o["storey"])
+        d = G.unit(o["b"] - o["a"])
+        cover = rnd.uniform(dr.get("min_cover", 0.3), 1.0)
+        zt = z0 + o["head"] + 0.05
+        zb = zt - (o["head"] - o["sill"] + 0.1) * cover
+        # one or two panels, partly drawn
+        w = o["w"]
+        if rnd.random() < 0.5:
+            spans = [(o["u"] - w / 2 - 0.05, o["u"] - w / 2 + w * rnd.uniform(0.3, 0.6))]
+        else:
+            spans = [(o["u"] - w / 2 - 0.05, o["u"] + w / 2 + 0.05)]
+        for u0, u1 in spans:
+            parts.append(G.oriented_box(o["a"], d, u0, u1, -inner, -inner - 0.01, zb, zt))
+    model.add("dressing", "curtains", "IfcFurnishingElement", dr["material"], G.concat(parts))

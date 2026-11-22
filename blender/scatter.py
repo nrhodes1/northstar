@@ -1,159 +1,244 @@
-"""Procedural trees, shrubs and boulders instanced from out/site_scatter.json.
+"""Vegetation + street entourage from out/site_scatter.json, using the free
+Poly Haven models listed in spec/assets.yaml (cache/assets/models).
 
-Tree variants are generated once (trunk + branches + leaf clumps) and each
-tree is a linked duplicate scaled to its surveyed / measured height.
+Falls back to simple procedural plants if the asset cache is missing.
 """
 from __future__ import annotations
 
 import json
 import math
+import os
 import random
 
-import bmesh
 import bpy
-from mathutils import Matrix, Vector, noise
+from mathutils import Vector
+
+LIB = None
 
 
-def _mat(name):
-    return bpy.data.materials.get(name)
+def _lib():
+    global LIB
+    if LIB is None:
+        LIB = bpy.data.collections.new("asset_library")
+        bpy.context.scene.collection.children.link(LIB)
+        LIB.hide_render = True
+        LIB.hide_viewport = True
+        lc = bpy.context.view_layer.layer_collection.children.get("asset_library")
+        if lc:
+            lc.exclude = True
+    return LIB
 
 
-def _icosphere(bm, center, radius, subdiv=1, squash=1.0, jitter=0.0):
-    ret = bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=radius)
-    for v in ret["verts"]:
-        n = noise.noise(v.co * 3.1 + center * 0.7) if jitter else 0.0
-        v.co = Vector((v.co.x, v.co.y, v.co.z * squash)) * (1 + jitter * n) + center
-    return ret["verts"]
+def _append(asset_dir, mid):
+    path = os.path.join(asset_dir, "models", mid, f"{mid}.blend")
+    if not os.path.exists(path):
+        return []
+    with bpy.data.libraries.load(path) as (src, dst):
+        dst.objects = list(src.objects)
+    return [o for o in dst.objects if o is not None]
 
 
-def _cylinder(bm, p0, p1, r0, r1, segs=7):
-    d = p1 - p0
-    Lg = d.length
-    ret = bmesh.ops.create_cone(bm, cap_ends=True, segments=segs, radius1=r0, radius2=r1, depth=Lg)
-    rot = d.normalized().to_track_quat("Z", "Y").to_matrix().to_4x4()
-    M = Matrix.Translation((p0 + p1) / 2) @ rot
-    bmesh.ops.transform(bm, matrix=M, verts=ret["verts"])
-    return ret["verts"]
+def _bbox(objs):
+    mn = Vector((1e9, 1e9, 1e9))
+    mx = Vector((-1e9, -1e9, -1e9))
+    for o in objs:
+        if o.type != "MESH":
+            continue
+        for c in o.bound_box:
+            w = o.matrix_world @ Vector(c)
+            mn = Vector((min(mn.x, w.x), min(mn.y, w.y), min(mn.z, w.z)))
+            mx = Vector((max(mx.x, w.x), max(mx.y, w.y), max(mx.z, w.z)))
+    return mn, mx
 
 
-def make_tree_variant(idx, leaf_mat, bark_mat, seed, form="round"):
-    """Unit tree: height 10 m. Returns mesh datablock."""
-    rnd = random.Random(seed)
-    h = 10.0
-    bm_bark = bmesh.new()
-    bm_leaf = bmesh.new()
-    trunk_h = rnd.uniform(0.32, 0.45) * h
-    lean = Vector((rnd.uniform(-0.3, 0.3), rnd.uniform(-0.3, 0.3), 0))
-    top = Vector((0, 0, trunk_h)) + lean
-    _cylinder(bm_bark, Vector((0, 0, -0.3)), top, 0.22, 0.14)
-    crown_c = Vector((0, 0, trunk_h + (h - trunk_h) * 0.5)) + lean
-    rx = (h - trunk_h) * (0.55 if form == "round" else 0.35)
-    rz = (h - trunk_h) * 0.5
-    # main branches
-    tips = []
-    for b in range(rnd.randint(4, 6)):
-        a = rnd.uniform(0, 2 * math.pi)
-        up = rnd.uniform(0.35, 0.8)
-        tip = crown_c + Vector((math.cos(a) * rx * 0.65, math.sin(a) * rx * 0.65, (up - 0.4) * rz))
-        _cylinder(bm_bark, top, tip, 0.09, 0.03, segs=5)
-        tips.append(tip)
-    # leaf clumps on an ellipsoid shell + near branch tips
-    n = 240
-    for k in range(n):
-        if k < len(tips) * 6:
-            base = tips[k % len(tips)]
-            c = base + Vector((rnd.gauss(0, 0.5), rnd.gauss(0, 0.5), rnd.gauss(0, 0.4)))
-        else:
-            u = rnd.uniform(-1, 1)
-            t = rnd.uniform(0, 2 * math.pi)
-            rr = rnd.uniform(0.55, 1.0) ** 0.5
-            s = math.sqrt(1 - u * u)
-            c = crown_c + Vector((s * math.cos(t) * rx * rr, s * math.sin(t) * rx * rr, u * rz * rr))
-        _icosphere(bm_leaf, c, rnd.uniform(0.45, 0.85) * (rx / 4.6), subdiv=2, squash=0.75, jitter=0.55)
-    me = bpy.data.meshes.new(f"tree_v{idx}")
-    bm = bmesh.new()
-    for src, mi in ((bm_bark, 0), (bm_leaf, 1)):
-        tmp = bpy.data.meshes.new("tmp")
-        src.to_mesh(tmp)
-        for p in tmp.polygons:
-            p.material_index = mi
-        bm.from_mesh(tmp)
-        bpy.data.meshes.remove(tmp)
-        src.free()
-    bm.to_mesh(me)
-    bm.free()
-    me.materials.append(bark_mat)
-    me.materials.append(leaf_mat)
-    return me
+def tree_collections(asset_dir, mid, lod):
+    """One collection per tree model (trunk + leaves at the given LOD)."""
+    objs = _append(asset_dir, mid)
+    if not objs:
+        return []
+    want = [o for o in objs if o.name.endswith(f"_LOD{lod}") or o.name.endswith("_trunk")]
+    if not want:
+        want = [o for o in objs if o.type == "MESH"]
+    col = bpy.data.collections.new(f"lib_{mid}_LOD{lod}")
+    _lib().children.link(col)
+    for o in want:
+        col.objects.link(o)
+    mn, mx = _bbox(want)
+    col.instance_offset = ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)
+    col["height"] = mx.z - mn.z
+    col["radius"] = max(mx.x - mn.x, mx.y - mn.y) / 2
+    return [col]
 
 
-def make_shrub(kind, mat_a, mat_b, seed):
-    rnd = random.Random(seed)
-    bm = bmesh.new()
-    if kind == 0:      # rounded shrub
-        for k in range(7):
-            c = Vector((rnd.gauss(0, 0.25), rnd.gauss(0, 0.25), 0.35 + rnd.uniform(0, 0.25)))
-            _icosphere(bm, c, rnd.uniform(0.25, 0.4), subdiv=2, squash=0.8, jitter=0.3)
-    elif kind == 1:    # ornamental grass: thin cones fanning out
-        for k in range(26):
-            a = rnd.uniform(0, 2 * math.pi)
-            tilt = rnd.uniform(0.05, 0.45)
-            tip = Vector((math.cos(a) * tilt, math.sin(a) * tilt, rnd.uniform(0.55, 0.9)))
-            _cylinder(bm, Vector((0, 0, 0)), tip, 0.03, 0.002, segs=3)
-    else:              # perennial clump with flower heads
-        for k in range(10):
-            c = Vector((rnd.gauss(0, 0.22), rnd.gauss(0, 0.22), rnd.uniform(0.15, 0.45)))
-            _icosphere(bm, c, rnd.uniform(0.1, 0.18), subdiv=1, jitter=0.2)
-    me = bpy.data.meshes.new(f"shrub_{kind}")
-    bm.to_mesh(me)
-    bm.free()
-    me.materials.append(mat_a if kind != 2 else mat_b)
-    return me
+def variant_collections(asset_dir, mid, lod_pref=(1, 0, 2)):
+    """One collection per plant variant (objects named *_<x>_LODn)."""
+    objs = _append(asset_dir, mid)
+    meshes = [o for o in objs if o.type == "MESH"]
+    out = []
+    for lod in lod_pref:
+        sel = [o for o in meshes if o.name.endswith(f"_LOD{lod}")]
+        if sel:
+            break
+    else:
+        sel = [o for o in meshes if "geonodes" not in o.name and "geometry" not in o.name] or meshes
+    for o in sel:
+        if "geonodes" in o.name:
+            continue
+        col = bpy.data.collections.new(f"lib_{o.name}")
+        _lib().children.link(col)
+        col.objects.link(o)
+        mn, mx = _bbox([o])
+        col.instance_offset = ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)
+        col["height"] = mx.z - mn.z
+        out.append(col)
+    return out
+
+
+def instance(col, loc, rot_z=0.0, scale=1.0, name="inst", parent_col=None):
+    e = bpy.data.objects.new(name, None)
+    e.instance_type = "COLLECTION"
+    e.instance_collection = col
+    e.location = loc
+    e.rotation_euler = (0, 0, rot_z)
+    e.scale = (scale, scale, scale)
+    (parent_col or bpy.context.scene.collection).objects.link(e)
+    return e
+
+
+def lawn_grass(cols, cam_xy, radius=60.0, density=420.0, seed=1):
+    """Geometry-nodes grass on lawn / planting-strip ground near the camera."""
+    targets = [o for o in bpy.data.objects if o.type == "MESH" and (
+        o.name.startswith("site.ground.planting_strip"))]
+    if not targets or not cols:
+        return 0
+    grass_col = bpy.data.collections.new("lib_lawn_variants")
+    _lib().children.link(grass_col)
+    for c in cols:
+        grass_col.children.link(c)
+    ng = bpy.data.node_groups.new("lawn_scatter", "GeometryNodeTree")
+    ng.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+    ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    N = ng.nodes
+    L_ = ng.links.new
+    gi = N.new("NodeGroupInput")
+    go = N.new("NodeGroupOutput")
+    dist = N.new("GeometryNodeDistributePointsOnFaces")
+    dist.inputs["Density"].default_value = density
+    dist.inputs["Seed"].default_value = seed
+    pos = N.new("GeometryNodeInputPosition")
+    vm = N.new("ShaderNodeVectorMath")
+    vm.operation = "DISTANCE"
+    vm.inputs[1].default_value = (cam_xy[0], cam_xy[1], 0)
+    sep = N.new("ShaderNodeSeparateXYZ")
+    comb = N.new("ShaderNodeCombineXYZ")
+    L_(pos.outputs[0], sep.inputs[0])
+    L_(sep.outputs["X"], comb.inputs["X"])
+    L_(sep.outputs["Y"], comb.inputs["Y"])
+    L_(comb.outputs[0], vm.inputs[0])
+    cmp = N.new("FunctionNodeCompare")
+    cmp.data_type = "FLOAT"
+    cmp.operation = "GREATER_THAN"
+    cmp.inputs["B"].default_value = radius
+    L_(vm.outputs["Value"], cmp.inputs["A"])
+    dele = N.new("GeometryNodeDeleteGeometry")
+    ci = N.new("GeometryNodeCollectionInfo")
+    ci.inputs["Collection"].default_value = grass_col
+    ci.inputs["Separate Children"].default_value = True
+    ci.inputs["Reset Children"].default_value = True
+    iop = N.new("GeometryNodeInstanceOnPoints")
+    iop.inputs["Pick Instance"].default_value = True
+    rnd = N.new("FunctionNodeRandomValue")
+    rnd.data_type = "FLOAT_VECTOR"
+    rnd.inputs["Min"].default_value = (0, 0, 0)
+    rnd.inputs["Max"].default_value = (0, 0, 6.283)
+    rs = N.new("FunctionNodeRandomValue")
+    rs.data_type = "FLOAT"
+    rs.inputs[2].default_value = 0.45
+    rs.inputs[3].default_value = 0.9
+    join = N.new("GeometryNodeJoinGeometry")
+    L_(gi.outputs[0], dist.inputs["Mesh"])
+    L_(dist.outputs["Points"], dele.inputs["Geometry"])
+    L_(cmp.outputs["Result"], dele.inputs["Selection"])
+    L_(dele.outputs["Geometry"], iop.inputs["Points"])
+    L_(ci.outputs[0], iop.inputs["Instance"])
+    L_(rnd.outputs["Value"], iop.inputs["Rotation"])
+    L_(rs.outputs[1], iop.inputs["Scale"])
+    L_(gi.outputs[0], join.inputs[0])
+    L_(iop.outputs[0], join.inputs[0])
+    L_(join.outputs[0], go.inputs[0])
+    for o in targets:
+        m = o.modifiers.new("lawn", "NODES")
+        m.node_group = ng
+    return len(targets)
 
 
 def scatter(path, cfg):
     data = json.load(open(path))
-    col = bpy.data.collections.new("vegetation")
-    bpy.context.scene.collection.children.link(col)
-    lib = cfg["materials"]
-    leaf = _mat("tree_leaves")
-    bark = _mat("tree_bark")
-    meadow = _mat("meadow_planting") or leaf
-    # flower material
-    flower = bpy.data.materials.new("perennial_flowers")
-    flower.use_nodes = True
-    flower.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.55, 0.35, 0.6, 1)
-    variants = []
-    forms = ["round", "round", "upright", "round", "upright", "round"]
-    for i in range(6):
-        variants.append(make_tree_variant(i, leaf, bark, seed=11 + i, form=forms[i]))
     rnd = random.Random(3)
+    asset_dir = cfg.get("assets_dir")
+    models = cfg.get("models") or {}
+    if not asset_dir or not os.path.exists(os.path.join(asset_dir, "models")):
+        print("scatter: no asset cache - skipping vegetation")
+        return
+    veg = bpy.data.collections.new("vegetation")
+    bpy.context.scene.collection.children.link(veg)
+    near_trees = [c for m in models.get("trees_street", []) for c in tree_collections(asset_dir, m, 0)]
+    ctx_trees_near = [c for m in models.get("trees_context", []) for c in tree_collections(asset_dir, m, 0)]
+    ctx_trees_far = [c for m in models.get("trees_context", []) for c in tree_collections(asset_dir, m, 1)]
+    shrubs = [c for m in models.get("shrubs", []) for c in variant_collections(asset_dir, m)]
+    grasses = [c for m in models.get("grasses", []) for c in variant_collections(asset_dir, m)]
+    ground = [c for m in models.get("groundcover", []) for c in variant_collections(asset_dir, m)]
+    lawn = [c for m in models.get("lawn", []) for c in variant_collections(asset_dir, m, (0,))]
+    boulders = [c for m in models.get("boulders", []) for c in variant_collections(asset_dir, m, (1, 0))]
+    n_t = 0
     for t in data["trees"]:
-        me = variants[rnd.randrange(len(variants))]
-        ob = bpy.data.objects.new("tree_design" if t.get("src") == "design" else "tree_ctx", me)
-        s = max(t["h"], 3.0) / 10.0
-        sx = s * (t["r"] / (0.38 * max(t["h"], 3.0))) if t.get("r") else s
-        ob.scale = (sx, sx, s)
-        ob.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
-        ob.location = (t["x"], t["y"], t["z"])
-        col.objects.link(ob)
-    shrubs = [make_shrub(k, meadow, flower, seed=20 + k) for k in range(3)]
-    for s in data["shrubs"]:
-        ob = bpy.data.objects.new("shrub", shrubs[s["kind"]])
-        ob.scale = (s["s"],) * 3
-        ob.rotation_euler = (0, 0, rnd.uniform(0, 6.28))
-        ob.location = (s["x"], s["y"], s["z"])
-        col.objects.link(ob)
-    bm = bmesh.new()
-    _icosphere(bm, Vector((0, 0, 0.15)), 0.5, subdiv=3, squash=0.6, jitter=0.25)
-    bme = bpy.data.meshes.new("boulder")
-    bm.to_mesh(bme)
-    bm.free()
-    bme.materials.append(_mat("boulder"))
+        near = math.hypot(t["x"] - 14, t["y"] + 12) < 70
+        if t.get("src") == "design" and near_trees:
+            pool = near_trees
+        else:
+            pool = (ctx_trees_near if near else ctx_trees_far) or near_trees
+        if not pool:
+            continue
+        col = pool[rnd.randrange(len(pool))]
+        h = max(float(t["h"]), 3.0)
+        s = h / max(col.get("height", 10.0), 0.5)
+        instance(col, (t["x"], t["y"], t["z"] - 0.05), rnd.uniform(0, 6.283), s * rnd.uniform(0.92, 1.08),
+                 name="tree_design" if t.get("src") == "design" else "tree_ctx", parent_col=veg)
+        n_t += 1
+    pools = {0: shrubs or grasses, 1: grasses or shrubs, 2: ground or grasses}
+    for sh in data["shrubs"]:
+        pool = pools.get(sh["kind"]) or []
+        if not pool:
+            continue
+        col = pool[rnd.randrange(len(pool))]
+        target = {0: 1.3, 1: 1.0, 2: 0.4}[sh["kind"]] * (0.6 + sh["s"])
+        s = target / max(col.get("height", 0.5), 0.05)
+        instance(col, (sh["x"], sh["y"], sh["z"]), rnd.uniform(0, 6.283), s, name="plant", parent_col=veg)
     for b in data["boulders"]:
-        ob = bpy.data.objects.new("boulder", bme)
-        ob.scale = (b["s"] * 1.3, b["s"], b["s"] * 0.8)
-        ob.rotation_euler = (0, 0, rnd.uniform(0, 6.28))
-        ob.location = (b["x"], b["y"], b["z"])
-        col.objects.link(ob)
-    print(f"scatter: {len(data['trees'])} trees, {len(data['shrubs'])} shrubs, {len(data['boulders'])} boulders")
+        if boulders:
+            col = boulders[rnd.randrange(len(boulders))]
+            s = 0.8 * b["s"] / max(col.get("height", 1.0), 0.1)
+            instance(col, (b["x"], b["y"], b["z"] - 0.1), rnd.uniform(0, 6.283), s, name="boulder", parent_col=veg)
+    # street furniture
+    furn = data.get("furniture", [])
+    cache = {}
+    for f in furn:
+        mid = (models.get(f["kind"]) or [None])[0]
+        if not mid:
+            continue
+        if mid not in cache:
+            objs = _append(asset_dir, mid)
+            col = bpy.data.collections.new(f"lib_{mid}")
+            _lib().children.link(col)
+            for o in objs:
+                if not o.name.endswith("_aged") and o.type in ("MESH", "EMPTY"):
+                    col.objects.link(o)
+            mn, mx = _bbox(list(col.objects))
+            col.instance_offset = ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)
+            cache[mid] = col
+        instance(cache[mid], (f["x"], f["y"], f["z"]), f.get("rot", 0.0), f.get("scale", 1.0), name=f["kind"],
+                 parent_col=veg)
+    cam = cfg["views"]["views"].get(cfg["views"]["render"].get("main_view", ""), {}).get("position", [0, 0, 0])
+    nl = lawn_grass(lawn or grasses, cam[:2])
+    print(f"scatter: {n_t} trees, {len(data['shrubs'])} plants, {len(data['boulders'])} boulders, "
+          f"{len(furn)} furniture, lawn on {nl} surfaces")

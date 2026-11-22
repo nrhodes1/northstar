@@ -22,6 +22,9 @@ from datetime import datetime, timedelta
 import bpy
 from mathutils import Vector
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import photoreal as PR  # noqa: E402
+
 FT = 0.3048
 
 
@@ -338,7 +341,10 @@ def import_glb(path, collection):
 
 def set_sun(az, el, plan_rotation_deg):
     """Point the Nishita sky's sun at true azimuth/elevation (degrees)."""
+    PR.aim_sun(az, el, plan_rotation_deg)
     sky = bpy.context.scene.world.node_tree.nodes.get("Sky Texture")
+    if sky is None:
+        return
     azr, elr = math.radians(az), math.radians(el)
     vx, vy = math.sin(azr), math.cos(azr)
     th = math.radians(-plan_rotation_deg)
@@ -524,10 +530,17 @@ def main():
     site = a.site or os.path.join(out, "site.glb")
     if os.path.exists(site):
         import_glb(site, "site")
+    PR.init(cfg)
     apply_materials(cfg)
+    PR.apply_textures(cfg)
+    PR.set_object_colours(os.path.join(out, "site.meta.json"))
     sun_dir, el = setup_world(cfg, a)
     sun_az, sun_el = SUN
+    if cfg["views"]["lighting"].get("sky") == "hdri":
+        PR.setup_hdri(cfg)
     render_settings(cfg, a)
+    bpy.context.scene.cycles.max_bounces = cfg["views"]["render"].get("bounces", 8)
+    PR.compositor(cfg)
     views = cfg["views"]["views"]
     cams = {k: add_camera(k, v) for k, v in views.items()}
     if os.path.exists(os.path.join(out, "site_scatter.json")):
@@ -553,6 +566,8 @@ def main():
                 set_sun(sun_az, sun_el, cfg["site"]["plan_rotation_deg"])
             if v.get("eye_height") is not None:
                 place_on_ground(cams[n], v)
+            PR.camera_extras(cams[n], v, cfg)
+            PR.interior_lights(cfg, on=bool(v.get("interior_lights")))
             if v.get("clear_foreground"):
                 clear_foreground(cams[n], v, None)
             sc = bpy.context.scene

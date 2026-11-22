@@ -1,0 +1,38 @@
+# ---------------------------------------------------------------------------
+# ASSETS — free CC0 libraries (Poly Haven) used for photoreal rendering.
+# Fetched to cache/assets/ by `python tools/fetch_assets.py` (not committed).
+# Swap any asset by changing its Poly Haven id.
+# ---------------------------------------------------------------------------
+resolution: 2k
+hdri: {id: citrus_orchard_puresky, res: 4k}   # hazy, warm, low-contrast evening sky
+
+textures:        # Poly Haven texture ids referenced from materials.yaml `tex:`
+  - clean_asphalt
+  - concrete_pavement
+  - concrete_pavers_02
+  - concrete_floor_02
+  - granite_tile_02
+  - forest_floor
+  - leafy_grass
+  - brown_planks_05
+  - kitchen_wood
+  - plywood
+  - corrugated_iron_02
+  - brick_wall_02
+  - plastered_wall_02
+  - plastered_wall_04
+  - painted_concrete
+  - grey_roof_01
+
+models:          # Poly Haven model ids (blend), used by blender/scatter.py
+  trees_street: [tree_small_02]
+  trees_context: [island_tree_01, island_tree_02, island_tree_03]
+  shrubs: [shrub_01, shrub_02, shrub_03, shrub_04]
+  grasses: [grass_medium_01, grass_medium_02]
+  lawn: [grass_bermuda_01]
+  groundcover: [periwinkle_plant, celandine_01]
+  boulders: [boulder_01]
+  street_lamp: [street_lamp_02]
+  hydrant: [fire_hydrant]
+  utility: [utility_box_01]
+  manhole: [water_manhole_cover]

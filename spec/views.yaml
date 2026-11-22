@@ -11,6 +11,12 @@ render:
   samples: 256            # final; drafts override with --samples
   denoise: true
   look: AgX - Base Contrast
+  post:                    # compositor
+    glare: 0.08            # fog-glow mix on highlights (0 = off)
+    vignette: 0.18
+    dispersion: 0.004      # lens chromatic fringe
+  dof: {fstop: 11}         # depth of field (focus on view target)
+  bounces: 12
   exposure: -0.3
   film_transparent: false
   main_view: main_porch   # `--view main` renders this one
@@ -19,7 +25,10 @@ lighting:
   # Physical sun from location + date/time (America/New_York).
   date: "2026-10-08"
   time: "17:15"           # low, warm evening sun
-  sky: nishita            # nishita | hdri
+  sky: hdri               # hdri (assets.yaml) | nishita
+  hdri_strength: 0.8
+  hdri_rotation_deg: 0     # spin the sky; the sun lamp below does the key light
+  sun_lamp: {strength: 5.0, angle_deg: 1.5, temperature_k: 3700}
   sun_strength: 1.0
   sky_strength: 0.16
   air: 1.0
@@ -38,16 +47,16 @@ views:
   #   ortho: true, ortho_scale: ft   parallel (axonometric) camera, frame width in ft
   #   eye_height: ft         place camera this far above the ground under it
   main_porch:
-    description: MAIN VIEW - SW porch elevation from across the street (matches design rendering)
-    position: [48, -170, 0]
-    eye_height: 5.2              # ft above local grade (camera z is then ignored)
-    target: [48, -26, 21]
-    lens: 32
+    description: MAIN VIEW - SW porch from across the street; camera solved to match the design rendering
+    position: [46.2, -88.9, 9.6]   # solved from 8 corner correspondences (rms 9 px)
+    target: [47.6, -26.5, 9.6]     # yaw 1.8 deg
+    lens: 10.0                     # 122 deg horizontal FOV (full-frame equiv.)
+    shift: [0.0, 0.048]            # solved principal point (horizon below centre)
     two_point: true
-    clear_foreground: all        # remove the 6-storey bldg across the street (as in the design rendering)
-    sun: {azimuth: 150, elevation: 11}   # ARTISTIC override (true az/el, deg): raking light from the right
-                                         # as in the design rendering; NOT the real sun for lighting.date/time
+    clear_foreground: all
+    sun: {azimuth: 188, elevation: 15}   # ARTISTIC override: warm raking light from the right
     aspect: [2000, 924]
+    interior_lights: true
   porch_street:
     description: Street-level view of the shared porch from the River St corner
     position: [-8, -88, 5.4]      # River St, south of the corner
