@@ -60,6 +60,8 @@ def write_render_config(sp, out):
     for v in views["views"].values():
         v["position"] = [L(c) for c in v["position"]]
         v["target"] = [L(c) for c in v["target"]]
+        if "eye_height" in v:
+            v["eye_height"] = L(v["eye_height"])
     # cladding rib profiles live in envelope.yaml; attach them to their materials
     for ct in sp["envelope"]["cladding_types"].values():
         prof = ct.get("profile") or {}

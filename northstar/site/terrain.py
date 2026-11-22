@@ -176,7 +176,8 @@ def build_ground(sd: SiteData, ctx, model, lot, footprints):
     veg = vegetation_mask(sd, sp)
     H, res = sd.ortho.H, sd.ortho.res
     vegp = mask_to_polys(veg, -H, -H, res, sf["min_patch_m2"])
-    private = clean(parcels.intersection(disk).difference(lot).difference(footprints.buffer(0.1)))
+    # ground continues under context buildings (views may hide them from camera)
+    private = clean(parcels.intersection(disk).difference(lot))
     lawn = clean(private.intersection(vegp))
     paved = clean(private.difference(lawn))
     model.add("site", "ground/lawn", "IfcGeographicElement", sf["lawn_material"], drape(lawn, grade, 0.0))

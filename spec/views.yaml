@@ -13,6 +13,7 @@ render:
   look: AgX - Medium High Contrast
   exposure: 0.0
   film_transparent: false
+  main_view: main_porch   # `--view main` renders this one
 
 lighting:
   # Physical sun from location + date/time (America/New_York).
@@ -26,6 +27,23 @@ lighting:
   ozone: 1.0
 
 views:
+  # Per-view options:
+  #   two_point: true        level camera + vertical lens shift (verticals stay vertical)
+  #   clear_foreground:      hide context buildings/trees between camera and building
+  #       camera             ... from the camera only (still cast shadows, reflect)
+  #       all                ... from the render entirely (no shadows either)
+  #     (our own landscape trees are never cleared)
+  #   aspect: [w, h]         override render aspect for this view
+#   eye_height: ft         place camera this far above the ground under it
+  main_porch:
+    description: MAIN VIEW - SW porch elevation from across the street (matches design rendering)
+    position: [48, -170, 0]
+    eye_height: 5.2              # ft above local grade (camera z is then ignored)
+    target: [48, -26, 21]
+    lens: 32
+    two_point: true
+    clear_foreground: all        # remove the 6-storey bldg across the street (as in the design rendering)
+    aspect: [2000, 924]
   porch_street:
     description: Street-level view of the shared porch from the River St corner
     position: [-8, -88, 5.4]      # River St, south of the corner

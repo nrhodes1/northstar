@@ -373,6 +373,7 @@ def add_camera(name, v):
     cam = bpy.data.cameras.new(name)
     cam.lens = v.get("lens", 28)
     cam.sensor_width = 36
+    cam.sensor_fit = "HORIZONTAL"
     cam.clip_end = 3000
     ob = bpy.data.objects.new(name, cam)
     bpy.context.scene.collection.objects.link(ob)
@@ -381,13 +382,88 @@ def add_camera(name, v):
     ob.location = pos
     d = tgt - pos
     ob.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
-    # 2-point perspective for street views: shift instead of tilt
     if v.get("two_point", pos.z < 3.0):
+        # level camera (verticals stay vertical); frame the target with lens shift
         hd = Vector((d.x, d.y, 0)).normalized()
         ob.rotation_euler = hd.to_track_quat("-Z", "Y").to_euler()
         horiz = math.hypot(d.x, d.y)
-        cam.shift_y = (d.z / horiz) * cam.lens / cam.sensor_width * (16 / 9) * 0.5 if horiz else 0
+        # shift is in units of the sensor width (horizontal fit)
+        cam.shift_y = (d.z / horiz) * cam.lens / cam.sensor_width if horiz else 0
+    ob["view"] = dict(v)
     return ob
+
+
+def clear_foreground(cam_ob, v, aspect):
+    """Hide (from camera rays only) context objects that sit between the
+    camera and the target, inside the horizontal field of view."""
+    pos = Vector(v["position"])
+    tgt = Vector(v["target"])
+    fwd = Vector((tgt.x - pos.x, tgt.y - pos.y)).normalized()
+    reach = (Vector((tgt.x, tgt.y)) - Vector((pos.x, pos.y))).length - v.get("clear_margin_m", 6.0)
+    half = math.atan(18.0 / v.get("lens", 28)) + math.radians(4)
+    hidden = 0
+    for ob in bpy.data.objects:
+        if ob.type != "MESH":
+            continue
+        is_ctx = ob.name.startswith("context.") or ob.name.startswith("tree_ctx")
+        if not is_ctx:
+            continue
+        corners = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+        xs = [c.x for c in corners]
+        ys = [c.y for c in corners]
+        inside_box = min(xs) <= pos.x <= max(xs) and min(ys) <= pos.y <= max(ys)
+        block = inside_box
+        if not block:
+            for c in corners + [Vector(((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, 0))]:
+                r = Vector((c.x - pos.x, c.y - pos.y))
+                dist = r.dot(fwd)
+                if 0 < dist < reach and r.length > 1e-6:
+                    ang = math.acos(max(-1, min(1, dist / r.length)))
+                    if ang < half:
+                        block = True
+                        break
+        if block:
+            if v.get("clear_foreground") == "all":
+                ob.hide_render = True          # gone entirely (no shadow either)
+            else:
+                ob.visible_camera = False      # still casts shadows / reflects
+            hidden += 1
+    print(f"clear_foreground ({v.get('clear_foreground')}): {hidden} objects hidden")
+
+
+def place_on_ground(cam_ob, v):
+    """Set camera z = ground under it + eye_height (ground = site ground surfaces)."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    x, y = v["position"][0], v["position"][1]
+    origin = Vector((x, y, 500.0))
+    z = None
+    for _ in range(40):
+        hit, loc, nrm, idx, ob, mtx = bpy.context.scene.ray_cast(dg, origin, Vector((0, 0, -1)))
+        if not hit:
+            break
+        if ob.name.startswith("site.ground") or ob.name.startswith("site.landscape"):
+            z = loc.z
+            break
+        origin = loc - Vector((0, 0, 0.01))
+    if z is None:
+        print("place_on_ground: no ground found; keeping z")
+        return
+    eye = v["eye_height"]
+    cam_ob.location.z = z + eye
+    # re-aim the lens shift for the new height
+    tgt = Vector(v["target"])
+    d = tgt - cam_ob.location
+    horiz = math.hypot(d.x, d.y)
+    cam = cam_ob.data
+    cam.shift_y = (d.z / horiz) * cam.lens / cam.sensor_width if horiz else 0
+    print(f"camera {cam_ob.name}: ground {z:.2f} m, eye {cam_ob.location.z:.2f} m")
+
+
+def restore_visibility():
+    for ob in bpy.data.objects:
+        if ob.type == "MESH":
+            ob.visible_camera = True
+            ob.hide_render = False
 
 
 def render_settings(cfg, a):
@@ -439,10 +515,25 @@ def main():
     if a.save:
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(a.save))
     if a.view:
-        names = list(views) if a.view == "all" else a.view.split(",")
+        main = cfg["views"]["render"].get("main_view")
+        names = list(views) if a.view == "all" else [main if n == "main" else n for n in a.view.split(",")]
         os.makedirs(os.path.join(out, "renders"), exist_ok=True)
         for n in names:
             bpy.context.scene.camera = cams[n]
+            v = views[n]
+            restore_visibility()
+            if v.get("eye_height") is not None:
+                place_on_ground(cams[n], v)
+            if v.get("clear_foreground"):
+                clear_foreground(cams[n], v, None)
+            sc = bpy.context.scene
+            base_w = int(a.res.split("x")[0]) if a.res else cfg["views"]["render"]["resolution"][0]
+            base_h = int(a.res.split("x")[1]) if a.res else cfg["views"]["render"]["resolution"][1]
+            if v.get("aspect"):
+                aw, ah = v["aspect"]
+                sc.render.resolution_x, sc.render.resolution_y = base_w, int(round(base_w * ah / aw))
+            else:
+                sc.render.resolution_x, sc.render.resolution_y = base_w, base_h
             bpy.context.scene.render.filepath = os.path.join(out, "renders", f"{n}.png")
             bpy.ops.render.render(write_still=True)
             print("rendered", n)

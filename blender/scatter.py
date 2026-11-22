@@ -130,7 +130,7 @@ def scatter(path, cfg):
     rnd = random.Random(3)
     for t in data["trees"]:
         me = variants[rnd.randrange(len(variants))]
-        ob = bpy.data.objects.new("tree", me)
+        ob = bpy.data.objects.new("tree_design" if t.get("src") == "design" else "tree_ctx", me)
         s = max(t["h"], 3.0) / 10.0
         sx = s * (t["r"] / (0.38 * max(t["h"], 3.0))) if t.get("r") else s
         ob.scale = (sx, sx, s)
