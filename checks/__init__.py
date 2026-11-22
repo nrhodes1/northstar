@@ -127,7 +127,18 @@ def check_openings_hosted(model, ctx):
     return _r("Openings sit in exterior walls", not far, f"{len(ol) - len(far)}/{len(ol)} hosted")
 
 
-CHECKS = [check_guards, check_stairs, check_height, check_wwr, check_posts, check_clt_span,
+def check_fire_separation(model, ctx):
+    from northstar import analysis as A
+    from northstar.builders.envelope import opening_list
+    cs = A.fire_separation(ctx, opening_list(ctx))
+    bad = [c for c in cs if c["severity"] == "code"]
+    if not cs:
+        return _r("Fire separation openings (IBC 705.8)", True, "no facades within 20' of an interior lot line")
+    detail = "; ".join(f"{c['storey']}: {c['title']}" for c in bad) or f"{len(cs)} facades checked, all within limits"
+    return _r("Fire separation openings (IBC 705.8)", not bad, detail)
+
+
+CHECKS = [check_fire_separation, check_guards, check_stairs, check_height, check_wwr, check_posts, check_clt_span,
           check_openings_hosted]
 
 

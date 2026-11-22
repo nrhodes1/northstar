@@ -1,0 +1,138 @@
+# Room tags from the SD plans (id, name, scheduled area, label point in ft).
+rooms:
+  L1:
+  - id: 101A
+    name: 2BR/1.5B
+    area_sf: 793.0
+    at: [83.38, -26.96]
+  - id: 101B
+    name: BALCONY
+    area_sf: 58.19
+    at: [93.12, -17.74]
+  - id: 102A
+    name: 2BR/1.5B
+    area_sf: 990.19
+    at: [61.67, -13.03]
+  - id: 102B
+    name: BALCONY
+    area_sf: 60.51
+    at: [51.87, -0.21]
+  - id: '103'
+    name: FIRE/WATER
+    area_sf: 60.71
+    at: [17.48, -39.34]
+  - id: '104'
+    name: TRASH
+    area_sf: 152.99
+    at: [18.86, -22.23]
+  - id: '105'
+    name: COMMERCIAL
+    area_sf: 601.71
+    at: [6.95, -16.91]
+  - id: '106'
+    name: BOH
+    area_sf: 43.75
+    at: [18.39, -10.08]
+  - id: '107'
+    name: STORAGE/BOH
+    area_sf: 51.76
+    at: [27.13, -22.65]
+  - id: '466'
+    name: '?'
+    area_sf: null
+    at: [34.43, -89.79]
+  L2:
+  - id: 201A
+    name: 2BR/1.5B
+    area_sf: 861.84
+    at: [82.54, -29.85]
+  - id: 201B
+    name: BALCONY
+    area_sf: 58.43
+    at: [93.05, -17.48]
+  - id: 202A
+    name: 2BR/1.5B
+    area_sf: 1023.87
+    at: [60.78, -14.98]
+  - id: 202B
+    name: BALCONY
+    area_sf: 60.0
+    at: [51.97, 0.0]
+  - id: 203A
+    name: 2BR/1.5B
+    area_sf: 927.11
+    at: [11.59, -31.66]
+  - id: 203B
+    name: BALCONY
+    area_sf: 49.34
+    at: [-1.02, -17.93]
+  - id: '204'
+    name: STORAGE/BOH
+    area_sf: 51.86
+    at: [27.31, -22.2]
+  - id: '466'
+    name: '?'
+    area_sf: null
+    at: [34.43, -89.79]
+  L3:
+  - id: 301A
+    name: 3BR/1.5B DUPLEX
+    area_sf: 400.87
+    at: [86.09, -31.72]
+  - id: 302A
+    name: 2BR/1.5B
+    area_sf: 723.79
+    at: [67.52, -15.09]
+  - id: 302B
+    name: BALCONY
+    area_sf: 60.75
+    at: [63.23, 0.01]
+  - id: 303A
+    name: 3BR/1.5B DUPLEX
+    area_sf: 581.04
+    at: [45.06, -7.79]
+  - id: 304A
+    name: 2BR/1.5B
+    area_sf: 813.16
+    at: [6.71, -10.89]
+  - id: 304B
+    name: BALCONY
+    area_sf: 46.88
+    at: [-0.95, -18.18]
+  - id: 305A
+    name: 4BR/2B DUPLEX
+    area_sf: 354.28
+    at: [12.23, -33.65]
+  - id: '466'
+    name: '?'
+    area_sf: null
+    at: [34.43, -89.79]
+  L4:
+  - id: 301B
+    name: 3BR/1.5B DUPLEX
+    area_sf: 562.82
+    at: [82.41, -12.85]
+  - id: 301C
+    name: TERRACE
+    area_sf: 292.86
+    at: [84.41, -33.65]
+  - id: 303B
+    name: 3BR/1.5B DUPLEX
+    area_sf: 519.76
+    at: [51.17, -6.83]
+  - id: 303C
+    name: TERRACE
+    area_sf: 323.67
+    at: [63.69, -9.48]
+  - id: 305B
+    name: 4BR/2B DUPLEX
+    area_sf: 956.07
+    at: [4.87, -33.65]
+  - id: 305C
+    name: TERRACE
+    area_sf: 272.65
+    at: [29.08, -13.66]
+  - id: '466'
+    name: '?'
+    area_sf: null
+    at: [34.43, -89.79]

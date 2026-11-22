@@ -1,10 +1,11 @@
 # Build report — North Star House
-_Generated 2026-11-22 02:56 from spec/_
+_Generated 2026-11-22 03:43 from spec/_
 
 ## Checks
 
 | | Check | Result |
 |---|---|---|
+| FAIL | Fire separation openings (IBC 705.8) | L2: FSD 4.9' - openings 20% of face (allowed 16%); L3: FSD 4.9' - openings 22% of face (allowed 16%) |
 | PASS | Guard height (IBC 1015.3) | 3'-6" vs min 3'-6" |
 | PASS | Guard openings (IBC 1015.4) | clear 0'-3 1/2" vs < 4" |
 | PASS | Stair stair_nw riser (IBC 1011.5.2) | 18 risers @ 0'-6 11/16" |

@@ -44,6 +44,7 @@ Assumptions and open questions: **`decisions.md`**. Latest checks and quantities
 pip install -r requirements.txt
 python -m northstar.build                 # building -> out/
 python -m northstar.site.build            # site + context -> out/ (needs cache/, see below)
+python -m northstar.drawings              # annotated review plans -> out/drawings/plans.pdf
 blender -b -P blender/build_scene.py -- --out out --view all --samples 128 --save out/northstar.blend
 python -m pytest -q
 ```
