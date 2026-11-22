@@ -1,5 +1,5 @@
 # Build report — North Star House
-_Generated 2026-11-21 23:59 from spec/_
+_Generated 2026-11-22 02:56 from spec/_
 
 ## Checks
 
@@ -45,10 +45,13 @@ _Generated 2026-11-21 23:59 from spec/_
 | envelope | walls/plaster | clay_plaster | 557 |
 | envelope | walls/sheathing | wood_fibre_board | 548 |
 | envelope | walls/straw | straw_panel | 12,142 |
-| gallery | canopy/frame | steel_painted_dark | 69 |
+| gallery | canopy/frame | steel_painted_dark | 93 |
 | gallery | canopy/pv | pv_module | 17 |
+| gallery | canopy/roof | membrane | 52 |
+| gallery | canopy/soffit | soffit_painted | 38 |
 | gallery | columns | steel_painted_dark | 122 |
 | gallery | deck/framing | steel_painted_dark | 84 |
+| gallery | deck/soffit | soffit_painted | 47 |
 | gallery | deck/surface | decking_wood | 93 |
 | gallery | guardrails | steel_painted_dark | 20 |
 | gallery | stairs/landings | grating_galv | 57 |
