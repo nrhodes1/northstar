@@ -46,6 +46,20 @@ surfaces:
   vegetation_margin: 6
   min_patch_m2: 12
 
+added_streets:
+  # Streets missing from Boston GIS (traced from the tiles orthophoto).
+  # centerline in ft (drawing frame); bands listed from the curb outward.
+  - name: SW street (in front of the porch)
+    centerline: [[-3.2, -81.5], [262.5, -37.9]]
+    width: "26'-0\""                # curb to curb
+    left:                           # lot side (north)
+      - {kind: planting_strip, width: "3'-0\"", material: terrain_grass}
+      - {kind: sidewalk, width: "6'-0\""}
+    right:                          # far side (south)
+      - {kind: sidewalk, width: "8'-0\""}
+    crosswalk_at_start: true        # at River St
+    street_trees: {spacing: "42'-0\"", height_m: 5.0, crown_ratio: 0.22, species: honeylocust, start_offset: "30'-0\""}
+
 markings:
   centerline: {material: road_marking_yellow, width: "4\"", double_gap: "4\"", min_street_len_m: 60}
   crosswalk: {material: road_marking, bar: "2'-0\"", gap: "2'-0\"", depth: "10'-0\"", setback_m: 2.0}

@@ -336,6 +336,18 @@ def import_glb(path, collection):
     return col
 
 
+def set_sun(az, el, plan_rotation_deg):
+    """Point the Nishita sky's sun at true azimuth/elevation (degrees)."""
+    sky = bpy.context.scene.world.node_tree.nodes.get("Sky Texture")
+    azr, elr = math.radians(az), math.radians(el)
+    vx, vy = math.sin(azr), math.cos(azr)
+    th = math.radians(-plan_rotation_deg)
+    px = math.cos(th) * vx - math.sin(th) * vy
+    py = math.sin(th) * vx + math.cos(th) * vy
+    sky.sun_elevation = elr
+    sky.sun_rotation = math.atan2(px, py)
+
+
 def setup_world(cfg, a):
     sc = bpy.context.scene
     lt = cfg["views"]["lighting"]
@@ -349,6 +361,8 @@ def setup_world(cfg, a):
     th = math.radians(-cfg["site"]["plan_rotation_deg"])
     v = Vector((math.cos(th) * v_site.x - math.sin(th) * v_site.y,
                 math.sin(th) * v_site.x + math.cos(th) * v_site.y, v_site.z))
+    global SUN
+    SUN = (az, el)
     print(f"sun az {az:.1f} el {el:.1f} (drawing-frame dir {tuple(round(c, 3) for c in v)})")
     world = bpy.data.worlds.new("World")
     sc.world = world
@@ -503,6 +517,7 @@ def main():
         import_glb(site, "site")
     apply_materials(cfg)
     sun_dir, el = setup_world(cfg, a)
+    sun_az, sun_el = SUN
     render_settings(cfg, a)
     views = cfg["views"]["views"]
     cams = {k: add_camera(k, v) for k, v in views.items()}
@@ -522,6 +537,11 @@ def main():
             bpy.context.scene.camera = cams[n]
             v = views[n]
             restore_visibility()
+            if v.get("sun"):
+                set_sun(v["sun"]["azimuth"], v["sun"]["elevation"], cfg["site"]["plan_rotation_deg"])
+                print(f"view {n}: artistic sun az {v['sun']['azimuth']} el {v['sun']['elevation']}")
+            else:
+                set_sun(sun_az, sun_el, cfg["site"]["plan_rotation_deg"])
             if v.get("eye_height") is not None:
                 place_on_ground(cams[n], v)
             if v.get("clear_foreground"):

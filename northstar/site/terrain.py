@@ -138,6 +138,42 @@ def mask_to_polys(mask, x0, y0, res, min_area):
     return unary_union(out) if out else Polygon()
 
 
+# ---------------------------------------------------------------- added streets
+def added_streets(sp, disk, lot):
+    """Streets missing from city GIS, from site.yaml `added_streets`."""
+    rows = sp["site"].get("added_streets") or []
+    if not rows:
+        return None
+    roads, bands, crossings, trees = [], [], [], []
+    for st in rows:
+        cl = LineString([P(p) for p in st["centerline"]])
+        hw = L(st["width"]) / 2
+        roads.append(cl.buffer(hw, cap_style=2))
+        for side, sign in (("left", 1), ("right", -1)):
+            off = hw
+            for b in st.get(side, []):
+                w = L(b["width"])
+                o0 = cl.offset_curve(sign * off)
+                o1 = cl.offset_curve(sign * (off + w))
+                band = Polygon(list(o0.coords) + list(o1.coords)[::-1]).buffer(0)
+                bands.append((b["kind"], band.difference(lot), b.get("material")))
+                if b["kind"] == "planting_strip" and st.get("street_trees"):
+                    t = st["street_trees"]
+                    mid = cl.offset_curve(sign * (off + w / 2))
+                    d = L(t.get("start_offset", 0))
+                    while d < mid.length:
+                        p = mid.interpolate(d)
+                        trees.append({"x": p.x, "y": p.y, "h": t["height_m"], "species": t["species"],
+                                      "r": t["height_m"] * t.get("crown_ratio", 0.3)})
+                        d += L(t["spacing"])
+                off += w
+        if st.get("crosswalk_at_start"):
+            crossings.append((cl, hw))
+    road = unary_union(roads).intersection(disk)
+    allg = unary_union([road] + [g for _, g, _ in bands])
+    return {"road": road, "bands": bands, "all": allg, "crossings": crossings, "trees": trees}
+
+
 # ---------------------------------------------------------------- surfaces
 def build_ground(sd: SiteData, ctx, model, lot, footprints):
     sp = ctx.spec
@@ -153,6 +189,17 @@ def build_ground(sd: SiteData, ctx, model, lot, footprints):
     road = clean(clean(row.difference(sidewalks.buffer(0.05))).buffer(-0.3).buffer(0.3))
     sidewalk = clean(clean(row.difference(road)).union(clean(sidewalks.intersection(disk))).difference(lot))
     raise_ = L(sf["sidewalk_raise"])
+    extra = added_streets(sp, disk, lot)
+    if extra:
+        bands = unary_union([g for k, g, m in extra["bands"]])
+        road = clean(road.union(extra["road"]).difference(bands))
+        sidewalk = clean(sidewalk.difference(extra["road"]).difference(
+            unary_union([g for k, g, m in extra["bands"] if k != "sidewalk"])).union(
+            unary_union([g for k, g, m in extra["bands"] if k == "sidewalk"])))
+        for k, g, m in extra["bands"]:
+            if k == "planting_strip":
+                model.add("site", "ground/planting_strip", "IfcGeographicElement", m, drape(g, grade, raise_ - 0.03))
+        ctx._added_streets = extra
     model.add("site", "ground/road", "IfcCivilElement", sf["road_material"], drape(road, grade, -0.02))
     model.add("site", "ground/sidewalk", "IfcCivilElement", sf["sidewalk_material"],
               drape(sidewalk, grade, raise_ - 0.02))
@@ -178,6 +225,8 @@ def build_ground(sd: SiteData, ctx, model, lot, footprints):
     vegp = mask_to_polys(veg, -H, -H, res, sf["min_patch_m2"])
     # ground continues under context buildings (views may hide them from camera)
     private = clean(parcels.intersection(disk).difference(lot))
+    if extra:
+        private = clean(private.difference(extra["all"]))
     lawn = clean(private.intersection(vegp))
     paved = clean(private.difference(lawn))
     model.add("site", "ground/lawn", "IfcGeographicElement", sf["lawn_material"], drape(lawn, grade, 0.0))
@@ -250,6 +299,19 @@ def build_markings(sd: SiteData, ctx, model, grade, road, sidewalk):
                 bars.append(Polygon([c - nrm * bw / 2, c + nrm * bw / 2,
                                      c + nrm * bw / 2 + d * depth, c - nrm * bw / 2 + d * depth]))
                 t += bw + bg
+    extra = getattr(ctx, "_added_streets", None)
+    if extra:
+        bw, bg, depth = L(cw["bar"]), L(cw["gap"]), L(cw["depth"])
+        for cl, hw in extra["crossings"]:
+            a = np.array(cl.coords[0]); b = np.array(cl.coords[1])
+            d = G.unit(b - a); nrm = np.array([-d[1], d[0]])
+            p0 = a + d * 3.0
+            t = -hw
+            while t < hw - bw:
+                c = p0 + nrm * (t + bw / 2)
+                bars.append(Polygon([c - nrm * bw / 2, c + nrm * bw / 2,
+                                     c + nrm * bw / 2 + d * depth, c - nrm * bw / 2 + d * depth]))
+                t += bw + bg
     if bars:
         model.add("site", "markings/crosswalks", "IfcAnnotation", cw["material"],
                   drape(unary_union(bars).intersection(road), grade, 0.006, cell=2.0))
@@ -296,6 +358,10 @@ def build_lot_landscape(sd: SiteData, ctx, model, grade, lot, scatter):
                 scatter["boulders"].append({"x": x, "y": y, "z": float(grade.sample(x, y)),
                                             "s": float(rng.uniform(0.4, 0.9))})
                 break
+    extra = getattr(ctx, "_added_streets", None)
+    for t in (extra or {}).get("trees", []):
+        scatter["trees"].append({"x": t["x"], "y": t["y"], "z": float(grade.sample(t["x"], t["y"])),
+                                 "h": t["h"], "r": t["r"], "species": t["species"], "src": "design"})
     for t in ls["trees"]:
         x, y = P(t["at"])
         h = t["height_m"]

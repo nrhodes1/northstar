@@ -103,6 +103,9 @@ def build_gallery(ctx: Ctx, model: Model):
                     frame.append(G.segment_solid((xa, ya), (xb, yb), L("2\""), z - thk + L("2\""), z - dt))
             x += L("2'-0\"")
         model.add("gallery", "deck/framing", "IfcBeam", gl["deck"]["framing_material"], G.concat(frame), level=lv)
+        if gl["deck"].get("soffit"):
+            model.add("gallery", "deck/soffit", "IfcCovering", gl["deck"]["soffit_material"],
+                      G.extrude(deck_l, z - thk - L("3/4\""), z - thk), level=lv)
         # rails: outer edges except against building and at stair heads
         bldg = ctx.outlines.get(lv)
         excl = unary_union([bldg.buffer(0.25), stair_polys.buffer(0.05)])
@@ -122,8 +125,9 @@ def build_gallery(ctx: Ctx, model: Model):
     cover = cover.difference(below.buffer(-0.01) if below is not None else cover.buffer(0))
     zc = canopy_z
     t = L(cp["thickness"])
-    model.add("gallery", "canopy/frame", "IfcRoof", cp["frame_material"],
-              G.extrude(G.ring(cover, 0, L("6\"")), zc - t, zc), level=gl["canopy_level"])
+    lvl = gl["canopy_level"]
+    model.add("gallery", "canopy/frame", "IfcRoof", cp.get("fascia_material", cp["frame_material"]),
+              G.extrude(G.ring(cover, 0, L("6\"")), zc - t, zc + L("1\"")), level=lvl)
     # joists
     js = []
     minx, miny, maxx, maxy = cover.bounds
@@ -134,8 +138,16 @@ def build_gallery(ctx: Ctx, model: Model):
             if s_.length > 0.3:
                 js.append(G.segment_solid(s_.coords[0], s_.coords[-1], L("2\""), zc - t, zc - L("1\"")))
         x += L("3'-6\"")
-    model.add("gallery", "canopy/frame", "IfcBeam", cp["frame_material"], G.concat(js), level=gl["canopy_level"])
-    if cp["surface"] == "pv_canopy":
+    model.add("gallery", "canopy/frame", "IfcBeam", cp["frame_material"], G.concat(js), level=lvl)
+    roof = cp.get("roof", "metal_roof")
+    if roof != "open_frame":
+        model.add("gallery", "canopy/roof", "IfcRoof", cp.get("roof_material", "membrane"),
+                  G.extrude(cover, zc - L("1\""), zc), level=lvl)
+    if cp.get("soffit"):
+        model.add("gallery", "canopy/soffit", "IfcCovering", cp["soffit_material"],
+                  G.extrude(G.inset(cover, L("2\"")), zc - t - L("3/4\""), zc - t), level=lvl)
+    if cp.get("pv", cp.get("surface") == "pv_canopy"):
+        from shapely.geometry import box as sbox
         w, ln = L(cp["pv_module"]["width"]), L(cp["pv_module"]["length"])
         gap = L(cp["pv_module"]["gap"])
         mods = []
@@ -144,18 +156,14 @@ def build_gallery(ctx: Ctx, model: Model):
         while y < maxy:
             x = minx
             while x < maxx:
-                from shapely.geometry import box as sbox
                 r = sbox(x, y, x + w, y + ln)
                 if inner.contains(r):
-                    mods.append(G.extrude(r, zc, zc + L("1 3/8\"")))
+                    mods.append(G.extrude(r, zc + L("2\""), zc + L("3 3/8\"")))
                 x += w + gap
             y += ln + gap
-        model.add("gallery", "canopy/pv", "IfcSolarDevice", "pv_module", G.concat(mods), level=gl["canopy_level"],
+        model.add("gallery", "canopy/pv", "IfcSolarDevice", "pv_module", G.concat(mods), level=lvl,
                   count=len(mods))
         model.flag(f"Gallery canopy PV: {len(mods)} modules")
-    else:
-        model.add("gallery", "canopy/roof", "IfcRoof", cp["surface"],
-                  G.extrude(cover, zc, zc + L("1\"")), level=gl["canopy_level"])
 
 
 def _stair(ctx, model, s, q, sd, rail):
