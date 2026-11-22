@@ -502,6 +502,12 @@ def render_settings(cfg, a):
     sc.cycles.device = "CPU"
     sc.cycles.samples = a.samples or r["samples"]
     sc.cycles.use_denoising = r.get("denoise", True)
+    sc.cycles.use_auto_tile = True          # lower peak memory on big frames
+    sc.cycles.tile_size = 512
+    try:
+        sc.cycles.denoising_quality = "BALANCED"
+    except Exception:
+        pass
     sc.cycles.max_bounces = 8
     sc.cycles.transparent_max_bounces = 8
     if a.cpu_threads:

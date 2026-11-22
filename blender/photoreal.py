@@ -232,7 +232,7 @@ def compositor(cfg):
     if post.get("glare"):
         g = nt.nodes.new("CompositorNodeGlare")
         g.glare_type = "FOG_GLOW"
-        g.quality = "HIGH"
+        g.quality = "MEDIUM"
         g.threshold = 1.0
         g.mix = -1 + 2 * post["glare"]
         L_(cur, g.inputs["Image"])
