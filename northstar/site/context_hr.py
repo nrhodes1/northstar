@@ -84,11 +84,14 @@ def street_facing(a, b, n, streets):
     return best < -2.0
 
 
-def build(model, poly, base, eave, gnd, typ, streets, spec, pitched, key):
+def build(model, poly, base, eave, gnd, typ, streets, spec, pitched, key, override=None):
     S = samples(spec)
     hr = spec["context"]["buildings"].get("high_res", {})
     fh = spec["context"]["buildings"]["floor_height_m"]
-    floors = max(1, int(round((eave - gnd - 0.2) / fh)))
+    ov = override or {}
+    floors = ov.get("floors") or max(1, int(round((eave - gnd - 0.2) / fh)))
+    if ov.get("floors"):
+        fh = (eave - gnd - 0.3) / floors          # fit the given storeys into the measured height
     P = G.polygon(poly.exterior.coords)
     cols = []
     edges = []
@@ -104,6 +107,10 @@ def build(model, poly, base, eave, gnd, typ, streets, spec, pitched, key):
     else:
         rgb = None
     cls = classify(rgb) if rgb is not None else {"apartment": "brick", "tower": "panel"}.get(typ, "siding")
+    if ov.get("cls"):
+        cls = ov["cls"]
+    if ov.get("rgb"):
+        rgb = np.array(ov["rgb"]) / 1.15
     if rgb is None:
         rgb = np.array({"brick": [0.45, 0.27, 0.2], "panel": [0.8, 0.8, 0.8], "siding": [0.82, 0.8, 0.74]}[cls])
     rgb = np.clip(rgb * 1.15, 0, 1)     # tiles are dark (baked shade) - lift toward albedo

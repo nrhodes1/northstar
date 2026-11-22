@@ -87,7 +87,22 @@ def build_context(sd: SiteData, ctx, model, lot, grade):
                 continue   # existing structures on our lot are replaced
             polys.append((p, props))
 
+    ovs = cb.get("overrides") or []
+
+    def override_for(p):
+        for o in ovs:
+            if p.contains(Point(o["at"])):
+                return o
+        return None
+
     for i, (p, props) in enumerate(polys):
+        ov = override_for(p)
+        use0 = str(props.get("PART_USE") or props.get("Land_Use") or "")
+        rect_thr = cb.get("rectangularize_apartments")
+        mrr = p.minimum_rotated_rectangle
+        if (ov and ov.get("massing") == "rectangle") or (
+                rect_thr and use0.startswith("A") and p.area / mrr.area > rect_thr):
+            p = mrr
         ground_ex = sd.dem.sample(*np.asarray(p.representative_point().coords[0]))
         zg, pts = _samples(p.buffer(-0.6) if p.buffer(-0.6).area > 4 else p, grade)
         base = float(np.min(zg)) - 0.2
@@ -110,22 +125,29 @@ def build_context(sd: SiteData, ctx, model, lot, grade):
                 continue
             typ = t
             break
+        if ov and ov.get("typology"):
+            typ = next((t for t in cb["typologies"] if t["name"] == ov["typology"]), typ)
         wall_mat = _pick(typ["material"], i)
         roof_mat = typ["roof"]
         rd = cb["roof_detection"]
         pitched = (typ["name"] == "house" and (p90 - p10) > rd["flat_if_range_below_m"]
                    and (p90 - p10) > rd["min_pitch_rise_m"] and p.area < 600)
+        if ov and ov.get("roof"):
+            pitched = ov["roof"] == "pitched"
         z_top = gnd + h
+        if ov and ov.get("height_m"):
+            z_top = gnd + ov["height_m"]
         if pitched:
             z_eave = gnd + max(p10, 3.0)
             z_eave = min(z_eave, z_top - 1.2)
         else:
             z_eave = z_top
+        g_low = float(np.min(zg)) if cb.get("floors_from_low_side") else gnd
         near = p.centroid.distance(Point(0, 0)) < detail_r
         hr = cb.get("high_res", {}).get("enabled") and near
         if hr:
             from . import context_hr
-            context_hr.build(model, p, base, z_eave, gnd, typ["name"], streets, sp, pitched, i)
+            context_hr.build(model, p, base, z_eave, g_low, typ["name"], streets, sp, pitched, i, override=ov)
         else:
             body = G.extrude(p, base, z_eave)
             model.add("context", f"buildings/walls", "IfcBuilding", wall_mat, body, typology=typ["name"],
@@ -252,6 +274,12 @@ def _missing_from_tiles(sd, ctx, model, lot, have, grade, cb):
             qq = _rectilinear(qq, cell=1.5)
             if qq.is_empty:
                 continue
+            if qq.geom_type != "Polygon":
+                qq = max(G.as_polys(qq), key=lambda g: g.area)
+            mrr = qq.minimum_rotated_rectangle
+            ov = next((o for o in (cb.get("overrides") or []) if qq.buffer(2).contains(Point(o["at"]))), None)
+            if (ov and ov.get("massing") == "rectangle") or qq.area / mrr.area > 0.7:
+                qq = mrr
             if qq.is_empty:
                 continue
             zg, _ = _samples(qq, grade)
@@ -261,12 +289,17 @@ def _missing_from_tiles(sd, ctx, model, lot, have, grade, cb):
             if h < 4:
                 continue
             typ = next(t for t in cb["typologies"] if h >= t.get("min_height_m", 0) and "use" not in t)
+            if 8.0 <= h < 16.5:
+                typ = dict(typ, name="apartment")
             near = qq.centroid.distance(Point(0, 0)) < ctx.spec["site"]["extent"]["detail_radius_m"]
             if cb.get("high_res", {}).get("enabled") and near and qq.geom_type == "Polygon":
                 from . import context_hr
                 streets = [ln for ln, _ in sd.streets]
-                context_hr.build(model, qq, float(np.min(zg)) - 0.2, gnd + h, gnd, typ["name"], streets,
-                                 ctx.spec, False, round(qq.area))
+                g_low = float(np.min(zg)) if cb.get("floors_from_low_side") else gnd
+                if ov and ov.get("height_m"):
+                    h = ov["height_m"]
+                context_hr.build(model, qq, float(np.min(zg)) - 0.2, gnd + h, g_low, typ["name"], streets,
+                                 ctx.spec, False, round(qq.area), override=ov)
             else:
                 body = G.extrude(qq, float(np.min(zg)) - 0.2, gnd + h)
                 model.add("context", "buildings/walls", "IfcBuilding", _pick(typ["material"], qq.area), body,

@@ -11,6 +11,20 @@ buildings:
     min_pitch_rise_m: 1.2
   add_missing_from_tiles: true   # tall non-vegetated DSM blobs with no footprint
   missing_min_area_m2: 60
+  rectangularize_apartments: 0.8 # footprint/min-rectangle ratio above which apartment
+                                 # footprints are squared up (city GIS traces every jog)
+  floors_from_low_side: true     # count storeys from the lowest grade (sloped sites)
+  overrides:
+    # Per-building corrections, matched by a plan point (m, drawing frame) inside
+    # the footprint. Keys: material (cls brick|siding|panel), rgb, massing
+    # (rectangle|as_is), floors, height_m, typology, roof (flat|pitched).
+    - {at: [-29.7, 25.1], note: "River St apartments W (Google Earth)", cls: brick, rgb: [0.78, 0.55, 0.36], massing: rectangle}
+    - {at: [-25.0, 65.5], note: "River St apartments W", cls: brick, rgb: [0.78, 0.55, 0.36], massing: rectangle}
+    - {at: [-75.4, 40.0], note: "River St apartments W", cls: brick, rgb: [0.78, 0.55, 0.36], massing: rectangle}
+    - {at: [-59.0, 23.0], note: "River St apartments W (not in 2010 GIS; from tiles)", cls: brick, rgb: [0.78, 0.55, 0.36], massing: rectangle}
+    - {at: [-41.0, 79.0], note: "River St apartments NW (not in 2010 GIS; from tiles)", cls: brick, rgb: [0.78, 0.55, 0.36], massing: rectangle, floors: 4}
+    - {at: [49.4, 16.2], note: "NE neighbour - 4 storeys on the low (parking) side", cls: brick, floors: 4, massing: rectangle, typology: apartment, roof: flat}
+    - {at: [52.7, -0.2], note: "NE neighbour (2nd wing)", cls: brick, floors: 4, massing: rectangle, typology: apartment, roof: flat}
   high_res:                      # buildings within site.extent.detail_radius_m
     enabled: true
     window: {recess_m: 0.14}       # sizes default by typology (house / apartment)
@@ -25,7 +39,7 @@ buildings:
   typologies:
     # first rule that matches wins. use = Boston land-use code prefix.
     - {name: tower,      min_height_m: 16, material: [ctx_panel_white, ctx_panel_blue], roof: ctx_roof_white}
-    - {name: apartment,  min_height_m: 10, use: [A, R4, RC], material: [ctx_brick], roof: ctx_roof_flat}
+    - {name: apartment,  min_height_m: 9, use: [A, R4, RC], material: [ctx_brick], roof: ctx_roof_flat}
     - {name: commercial, use: [C, CM, CL, I, E, EA], material: [ctx_stucco, ctx_brick, ctx_vinyl_white], roof: ctx_roof_flat}
     - {name: house,      material: [ctx_vinyl_white, ctx_vinyl_grey, ctx_vinyl_beige, ctx_vinyl_blue], roof: ctx_roof_asphalt}
 
