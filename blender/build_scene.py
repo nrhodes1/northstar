@@ -434,7 +434,13 @@ def clear_foreground(cam_ob, v, aspect):
             for c in corners + [Vector(((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, 0))]:
                 r = Vector((c.x - pos.x, c.y - pos.y))
                 dist = r.dot(fwd)
-                if 0 < dist < reach and r.length > 1e-6:
+                if v.get("ortho"):
+                    # parallel camera: corridor as wide as the frame, projected to plan
+                    lateral = abs(r.x * fwd.y - r.y * fwd.x)
+                    if 0 < dist < reach and lateral < v.get("ortho_scale", 50) / 2:
+                        block = True
+                        break
+                elif 0 < dist < reach and r.length > 1e-6:
                     ang = math.acos(max(-1, min(1, dist / r.length)))
                     if ang < half:
                         block = True

@@ -81,6 +81,8 @@ views:
     target: [46, -20, 18]
     ortho: true
     ortho_scale: 175
+    clear_foreground: all   # 6-storey bldg across the street would hide the porch
+    clear_margin_m: 22
   axon_ne:
     description: Axon from the NE corner (rear parking / brick neighbours)
     position: [329, 263, 290]
