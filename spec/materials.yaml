@@ -9,7 +9,7 @@
 # To restyle the building, change entries here — geometry is untouched.
 # ---------------------------------------------------------------------------
 
-corrugated_galvalume: {shader: corrugated_metal, color: [0.66, 0.69, 0.71], roughness: 0.38, metallic: 1.0}
+corrugated_galvalume: {shader: corrugated_metal, color: [0.40, 0.45, 0.50], roughness: 0.42, metallic: 0.85}   # blue-grey (matches design rendering)
 standing_seam_zinc:   {shader: corrugated_metal, color: [0.48, 0.51, 0.53], roughness: 0.45, metallic: 0.9}
 charred_larch:        {shader: procedural_wood, color: [0.08, 0.07, 0.065], roughness: 0.8}
 coping_metal:         {shader: principled, color: [0.62, 0.65, 0.67], roughness: 0.35, metallic: 1.0}

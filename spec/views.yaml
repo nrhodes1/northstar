@@ -35,6 +35,7 @@ views:
   #     (our own landscape trees are never cleared)
   #   aspect: [w, h]         override render aspect for this view
   #   sun: {azimuth, elevation}  artistic sun override for this view (true-north degrees)
+  #   ortho: true, ortho_scale: ft   parallel (axonometric) camera, frame width in ft
   #   eye_height: ft         place camera this far above the ground under it
   main_porch:
     description: MAIN VIEW - SW porch elevation from across the street (matches design rendering)
@@ -67,8 +68,28 @@ views:
     position: [-16, 40, 5.4]       # on River St, north of the site
     target: [4, -18, 15]
     lens: 26
+  # --- axonometrics: true parallel projection from each corner of the plan ---
+  axon_sw:
+    description: Axon from the SW corner (porch side, River St)
+    position: [-237, -303, 290]
+    target: [46, -20, 18]
+    ortho: true
+    ortho_scale: 175        # ft across the frame
   axon_se:
-    description: Overhead axon-like view, long lens
-    position: [260, -260, 300]
-    target: [46, -18, 10]
-    lens: 85
+    description: Axon from the SE corner
+    position: [329, -303, 290]
+    target: [46, -20, 18]
+    ortho: true
+    ortho_scale: 175
+  axon_ne:
+    description: Axon from the NE corner (rear parking / brick neighbours)
+    position: [329, 263, 290]
+    target: [46, -20, 18]
+    ortho: true
+    ortho_scale: 175
+  axon_nw:
+    description: Axon from the NW corner (commercial corner on River St)
+    position: [-237, 263, 290]
+    target: [46, -20, 18]
+    ortho: true
+    ortho_scale: 175

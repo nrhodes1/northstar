@@ -24,6 +24,19 @@ def graded(sd: SiteData, ctx, lot):
     zpad = L(gr["pad_offset"])
     X, Y = sd.dem.xy()
     Z = sd.dem.z.copy()
+    # smooth lidar noise; much stronger under buildings (bare-earth there is interpolated)
+    from scipy.ndimage import gaussian_filter
+    res = sd.dem.res
+    Zl = gaussian_filter(Z, gr.get("smooth_sigma_m", 0) / res) if gr.get("smooth_sigma_m") else Z
+    if gr.get("under_buildings_sigma_m"):
+        top = sd.dsm.sample(X.ravel(), Y.ravel()).reshape(Z.shape)
+        bmask = (top - Z) > 3.0
+        rgb = sd.ortho.rgb(X.ravel(), Y.ravel()).reshape(Z.shape + (3,)).astype(int)
+        bmask &= ~((rgb[..., 1] > rgb[..., 0] + 6) & (rgb[..., 1] > rgb[..., 2] + 3))   # not trees
+        w = gaussian_filter(bmask.astype(float), 2.0 / res)
+        Zs = gaussian_filter(Z, gr["under_buildings_sigma_m"] / res)
+        Zl = Zl * (1 - w) + Zs * w
+    Z = Zl
     pts = shapely.points(X.ravel(), Y.ravel())
     inlot = shapely.contains(lot, pts).reshape(Z.shape)
     d_in = shapely.distance(pad, pts).reshape(Z.shape)

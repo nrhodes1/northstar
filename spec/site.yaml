@@ -33,6 +33,8 @@ grading:
   pad_offset: "-6\""        # finished grade at the building = FFE - 6"
   pad_buffer_m: 1.5         # flat pad around the L1 outline
   blend_m: 8.0              # distance over which the pad blends into existing grade
+  smooth_sigma_m: 1.0       # light smoothing of lidar grade (outside our lot)
+  under_buildings_sigma_m: 5.0   # strong smoothing where the lidar interpolates under buildings
 
 surfaces:
   sidewalk_raise: "6\""     # curb reveal

@@ -396,7 +396,10 @@ def add_camera(name, v):
     ob.location = pos
     d = tgt - pos
     ob.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
-    if v.get("two_point", pos.z < 3.0):
+    if v.get("ortho"):
+        cam.type = "ORTHO"
+        cam.ortho_scale = v.get("ortho_scale", 50.0)
+    elif v.get("two_point", pos.z < 3.0):
         # level camera (verticals stay vertical); frame the target with lens shift
         hd = Vector((d.x, d.y, 0)).normalized()
         ob.rotation_euler = hd.to_track_quat("-Z", "Y").to_euler()
