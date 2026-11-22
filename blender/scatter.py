@@ -38,14 +38,29 @@ def _append(asset_dir, mid):
     return [o for o in dst.objects if o is not None]
 
 
+def _mw(o):
+    """World matrix from transforms (appended objects aren't evaluated yet)."""
+    m = o.matrix_basis.copy()
+    p = o.parent
+    while p is not None:
+        m = p.matrix_basis @ o.matrix_parent_inverse @ m
+        o, p = p, p.parent
+    return m
+
+
+def _base(name):
+    return name.split(".")[0]
+
+
 def _bbox(objs):
     mn = Vector((1e9, 1e9, 1e9))
     mx = Vector((-1e9, -1e9, -1e9))
     for o in objs:
         if o.type != "MESH":
             continue
+        M = _mw(o)
         for c in o.bound_box:
-            w = o.matrix_world @ Vector(c)
+            w = M @ Vector(c)
             mn = Vector((min(mn.x, w.x), min(mn.y, w.y), min(mn.z, w.z)))
             mx = Vector((max(mx.x, w.x), max(mx.y, w.y), max(mx.z, w.z)))
     return mn, mx
@@ -56,7 +71,7 @@ def tree_collections(asset_dir, mid, lod):
     objs = _append(asset_dir, mid)
     if not objs:
         return []
-    want = [o for o in objs if o.name.endswith(f"_LOD{lod}") or o.name.endswith("_trunk")]
+    want = [o for o in objs if _base(o.name).endswith(f"_LOD{lod}") or _base(o.name).endswith("_trunk")]
     if not want:
         want = [o for o in objs if o.type == "MESH"]
     col = bpy.data.collections.new(f"lib_{mid}_LOD{lod}")
@@ -70,13 +85,13 @@ def tree_collections(asset_dir, mid, lod):
     return [col]
 
 
-def variant_collections(asset_dir, mid, lod_pref=(1, 0, 2)):
+def variant_collections(asset_dir, mid, lod_pref=(1, 0, 2), min_h=0.0):
     """One collection per plant variant (objects named *_<x>_LODn)."""
     objs = _append(asset_dir, mid)
     meshes = [o for o in objs if o.type == "MESH"]
     out = []
     for lod in lod_pref:
-        sel = [o for o in meshes if o.name.endswith(f"_LOD{lod}")]
+        sel = [o for o in meshes if _base(o.name).endswith(f"_LOD{lod}")]
         if sel:
             break
     else:
@@ -90,6 +105,8 @@ def variant_collections(asset_dir, mid, lod_pref=(1, 0, 2)):
         mn, mx = _bbox([o])
         col.instance_offset = ((mn.x + mx.x) / 2, (mn.y + mx.y) / 2, mn.z)
         col["height"] = mx.z - mn.z
+        if col["height"] < min_h:
+            continue
         out.append(col)
     return out
 
@@ -185,8 +202,8 @@ def scatter(path, cfg):
     near_trees = [c for m in models.get("trees_street", []) for c in tree_collections(asset_dir, m, 0)]
     ctx_trees_near = [c for m in models.get("trees_context", []) for c in tree_collections(asset_dir, m, 0)]
     ctx_trees_far = [c for m in models.get("trees_context", []) for c in tree_collections(asset_dir, m, 1)]
-    shrubs = [c for m in models.get("shrubs", []) for c in variant_collections(asset_dir, m)]
-    grasses = [c for m in models.get("grasses", []) for c in variant_collections(asset_dir, m)]
+    shrubs = [c for m in models.get("shrubs", []) for c in variant_collections(asset_dir, m, min_h=0.25)]
+    grasses = [c for m in models.get("grasses", []) for c in variant_collections(asset_dir, m, min_h=0.2)]
     ground = [c for m in models.get("groundcover", []) for c in variant_collections(asset_dir, m)]
     lawn = [c for m in models.get("lawn", []) for c in variant_collections(asset_dir, m, (0,))]
     boulders = [c for m in models.get("boulders", []) for c in variant_collections(asset_dir, m, (1, 0))]
@@ -211,8 +228,8 @@ def scatter(path, cfg):
         if not pool:
             continue
         col = pool[rnd.randrange(len(pool))]
-        target = {0: 1.3, 1: 1.0, 2: 0.4}[sh["kind"]] * (0.6 + sh["s"])
-        s = target / max(col.get("height", 0.5), 0.05)
+        target = {0: 1.1, 1: 0.8, 2: 0.3}[sh["kind"]] * (0.6 + sh["s"])
+        s = min(3.0 if sh["kind"] == 0 else 2.0, max(0.6, target / max(col.get("height", 0.5), 0.05)))
         instance(col, (sh["x"], sh["y"], sh["z"]), rnd.uniform(0, 6.283), s, name="plant", parent_col=veg)
     for b in data["boulders"]:
         if boulders:
@@ -238,7 +255,14 @@ def scatter(path, cfg):
             cache[mid] = col
         instance(cache[mid], (f["x"], f["y"], f["z"]), f.get("rot", 0.0), f.get("scale", 1.0), name=f["kind"],
                  parent_col=veg)
-    cam = cfg["views"]["views"].get(cfg["views"]["render"].get("main_view", ""), {}).get("position", [0, 0, 0])
-    nl = lawn_grass(lawn or grasses, cam[:2])
+    nl = 0
+    lawn_pool = lawn or grasses
+    for g in data.get("lawn", []):
+        if not lawn_pool:
+            break
+        col = lawn_pool[rnd.randrange(len(lawn_pool))]
+        s = min(1.6, max(0.6, 0.12 * g["s"] / max(col.get("height", 0.2), 0.02)))
+        instance(col, (g["x"], g["y"], g["z"]), rnd.uniform(0, 6.283), s, name="lawn", parent_col=veg)
+        nl += 1
     print(f"scatter: {n_t} trees, {len(data['shrubs'])} plants, {len(data['boulders'])} boulders, "
-          f"{len(furn)} furniture, lawn on {nl} surfaces")
+          f"{len(furn)} furniture, {nl} lawn tufts")

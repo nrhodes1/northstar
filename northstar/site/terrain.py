@@ -234,6 +234,7 @@ def build_ground(sd: SiteData, ctx, model, lot, footprints):
         for k, g, m in extra["bands"]:
             if k == "planting_strip":
                 model.add("site", "ground/planting_strip", "IfcGeographicElement", m, drape(g, grade, raise_ - 0.03))
+                ctx._lawn_polys = getattr(ctx, "_lawn_polys", []) + [(g, raise_ - 0.03)]
         ctx._added_streets = extra
     model.add("site", "ground/road", "IfcCivilElement", sf["road_material"], drape(road, grade, -0.02))
     model.add("site", "ground/sidewalk", "IfcCivilElement", sf["sidewalk_material"],
@@ -393,6 +394,18 @@ def build_lot_landscape(sd: SiteData, ctx, model, grade, lot, scatter):
                 scatter["boulders"].append({"x": x, "y": y, "z": float(grade.sample(x, y)),
                                             "s": float(rng.uniform(0.4, 0.9))})
                 break
+    # lawn tufts on planting strips (explicit points, density from site.yaml)
+    dens = sp["site"]["surfaces"].get("lawn_tufts_per_m2", 0)
+    for g, off in getattr(ctx, "_lawn_polys", []):
+        minx, miny, maxx, maxy = g.bounds
+        n = int(g.area * dens)
+        k = 0
+        while k < n:
+            x, y = rng.uniform(minx, maxx), rng.uniform(miny, maxy)
+            if g.contains(Point(x, y)):
+                scatter.setdefault("lawn", []).append({"x": x, "y": y, "z": float(grade.sample(x, y)) + off,
+                                                       "s": float(rng.uniform(0.5, 1.0))})
+                k += 1
     extra = getattr(ctx, "_added_streets", None)
     for f in (extra or {}).get("furniture", []):
         f = dict(f)

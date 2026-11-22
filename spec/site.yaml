@@ -47,6 +47,7 @@ surfaces:
   # ortho classification (tiles): vegetation if G is the max channel by margin
   vegetation_margin: 6
   min_patch_m2: 12
+  lawn_tufts_per_m2: 70           # grass tufts on planting strips (render)
 
 added_streets:
   # Streets missing from Boston GIS (traced from the tiles orthophoto).
